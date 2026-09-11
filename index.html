@@ -131,6 +131,9 @@
   .panel:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
   .panel canvas { width: 40px; height: 40px; image-rendering: pixelated; flex: none; border: 2px solid var(--ink); }
   .panel .ptxt { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+  /* Hàng dưới cùng có tới ba nút nên thẻ này hẹp. Cắt bớt bằng dấu ba chấm
+     chứ đừng để chữ xuống ba dòng làm thẻ cao vọt. */
+  .panel strong, .panel span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .panel strong { font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
   .panel span { font-size: .74rem; color: var(--ink-soft); }
   .panel .chev { font-size: 1.4rem; color: var(--ink-soft); flex: none; }
@@ -333,8 +336,9 @@
   .mission:hover { background: #FFFFFF; }
   .mission:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(43,27,20,.35); }
   .mission:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
-  /* 52 = 26 x 2 chẵn. Để 54 thì tỉ lệ 2.077 làm rơi điểm ảnh không đều. */
-  .mission canvas { width: 52px; height: 52px; image-rendering: pixelated; display: block; border: 2px solid var(--ink); }
+  /* 96 = 48 x 2 chẵn. Ô phải đủ 48 để chứa nguyên linh vật (cao 43 điểm ảnh)
+     ở tỉ lệ 1:1 — cắt hoặc thu nhỏ đều không được. */
+  .mission canvas { width: 96px; height: 96px; image-rendering: pixelated; display: block; border: 2px solid var(--ink); }
   .mission h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1rem; line-height: 1.1; }
   .mission .goal { margin: 0; font-size: .73rem; line-height: 1.35; color: var(--ink-soft); }
   .mission .done {
@@ -369,7 +373,7 @@
   .hub-actions { display: flex; gap: 10px; align-items: stretch; }
   .hub-actions .panel { flex: 1; min-width: 0; }
   .qrbtn {
-    flex: none; width: 64px; padding: 0; cursor: pointer;
+    flex: none; width: 54px; padding: 0; cursor: pointer;
     background: var(--cream); border: 3px solid var(--ink);
     box-shadow: 0 5px 0 rgba(43,27,20,.35);
     display: grid; place-items: center;
@@ -379,6 +383,57 @@
   .qrbtn:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(43,27,20,.35); }
   .qrbtn:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
   .qrbtn canvas { width: 34px; height: 34px; image-rendering: pixelated; display: block; }
+
+  /* ---------- Bấm giờ hành trình ---------- */
+  .trip-screen { display: flex; flex-direction: column; gap: 9px; flex: 1; min-height: 0; }
+  .trip-screen[hidden] { display: none; }
+  .tripclock {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(2.4rem, 15vw, 3.6rem); line-height: 1;
+    font-variant-numeric: tabular-nums; text-align: center; color: var(--ink);
+    background: var(--cream); border: 4px solid var(--ink);
+    box-shadow: 0 6px 0 rgba(43,27,20,.3); padding: 12px 8px 14px;
+  }
+  .tripclock.running { color: var(--red); }
+  .trip-run { display: flex; gap: 8px; }
+  .trip-run .btn { flex: 1; padding: 11px 8px; font-size: 1rem; white-space: nowrap; }
+  /* Nút tắt phải là màu đặc, đừng dùng opacity — nền tia nắng xuyên qua
+     làm nút nhìn như bị lỗi vẽ. */
+  .trip-run .btn[disabled] {
+    cursor: default; box-shadow: none; transform: none;
+    background: #D8CCB8; color: #8C7B67; border-color: #8C7B67;
+  }
+  .trip-where { display: flex; gap: 8px; }
+  .trip-where label {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px;
+    font-size: .6rem; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-soft);
+  }
+  .trip-where select {
+    width: 100%; border: 3px solid var(--ink); background: var(--cream);
+    font-family: var(--font-display); font-weight: 700; font-size: .92rem;
+    color: var(--ink); padding: 8px 6px; -webkit-appearance: none; appearance: none;
+  }
+  .trip-where select:focus { outline: none; border-color: var(--red); }
+  .trip-km {
+    margin: 0; text-align: center; font-family: var(--font-display); font-weight: 800;
+    font-size: 1.05rem; color: var(--ink);
+    background: var(--sun); border: 3px solid var(--ink); padding: 7px 8px;
+  }
+  .trip-km.dim { background: rgba(255,248,231,.72); color: var(--ink-soft); font-size: .8rem; font-weight: 600; }
+  .trip-total {
+    text-align: center; font-size: .78rem; color: var(--ink);
+    background: rgba(255,248,231,.8); border: 3px solid var(--ink); padding: 7px 8px;
+  }
+  .trip-total b { font-family: var(--font-display); font-size: 1rem; }
+  .trip-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
+  .trip-log li {
+    display: flex; justify-content: space-between; gap: 8px; align-items: baseline;
+    background: var(--cream); border: 2px solid var(--ink); padding: 5px 8px; font-size: .74rem;
+  }
+  .trip-log li span { color: var(--ink-soft); flex: none; font-weight: 700; }
+  .trip-log li em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .trip-empty { margin: 0; text-align: center; font-size: .76rem; color: var(--ink-soft); }
 
   .qrblock {
     display: flex; flex-direction: column; gap: 11px; align-items: center; padding: 4px 0 0;
@@ -651,9 +706,40 @@
           </span>
           <span class="chev">›</span>
         </button>
+        <button class="qrbtn" id="openTrip" type="button" aria-label="Bấm giờ hành trình">
+          <canvas id="tripIcon" width="34" height="34"></canvas>
+        </button>
         <button class="qrbtn" id="openQR" type="button" aria-label="Mã QR chia sẻ">
           <canvas id="qrMini" width="34" height="34"></canvas>
         </button>
+      </div>
+    </section>
+
+    <section class="trip-screen" id="trip" hidden>
+      <div class="playbar">
+        <button class="back" id="tripBack" type="button">‹ Nhiệm vụ</button>
+        <div class="playtitle">Bấm giờ hành trình</div>
+        <div></div>
+      </div>
+
+      <div class="tripclock" id="tripClock">00:00:00</div>
+
+      <div class="trip-run">
+        <button class="btn" id="tripStart" type="button">Bắt đầu</button>
+        <button class="btn ghost" id="tripStop" type="button">Kết thúc</button>
+      </div>
+
+      <div class="trip-where">
+        <label for="tripFrom">Điểm đi<select id="tripFrom"></select></label>
+        <label for="tripTo">Điểm đến<select id="tripTo"></select></label>
+      </div>
+      <p class="trip-km dim" id="tripKm">Chọn hai điểm để biết số ki-lô-mét</p>
+
+      <div class="trip-total" id="tripTotal">Chưa tích luỹ chuyến nào</div>
+      <ul class="trip-log" id="tripLog"></ul>
+
+      <div class="board-actions">
+        <button class="btn" id="tripShare" type="button">Tạo ảnh khoe</button>
       </div>
     </section>
 
@@ -1396,22 +1482,21 @@
      **tỉ lệ 1:1** rồi bày nguyên, không thu nhỏ. Toạ độ cắt đo từ chính atlas:
      với mỗi khung, lấy đỉnh đầu rồi canh giữa theo bề ngang của đầu.
 
-     **Chỉ bốn khung này thấy mặt**: 0 bay, 6 ngã, 7 reo, 8 buồn. Các khung
-     chạy (1–4) và nhảy (5) đều là lưng quay lại — cắt ra chỉ thấy gáy.
-     Nên bốn thẻ dùng khung 0 và 7, phân biệt nhau bằng nền và phép lật ngang.
-     Muốn mỗi trò một dáng riêng thì phải xin thêm khung hình mới. */
-  var FACE = { 0: [3, 12], 6: [8, 7], 7: [10, 3], 8: [9, 6] };
-  function heroFace(c, idx, flip) {
+     Đặt **nguyên con** ở tỉ lệ 1:1 chứ không cắt riêng cái đầu: cắt đầu thì
+     các khung chạy (1–4) và nhảy (5) chỉ thấy gáy — nhưng để nguyên cả người
+     thì chính dáng lưng-quay-lại-đang-chạy lại là thứ người chơi thấy trong game.
+     Nên mỗi thẻ = bối cảnh của chính trò đó + linh vật đang chơi trò đó. */
+  var ICON = 48;
+  function heroFull(c, idx, flip) {
     if (!HERO_OK) return false;
-    var f = FACE[idx] || [9, 4];
     if (flip) {
       c.save();
-      c.translate(26, 0);
+      c.translate(ICON + 2, 0);
       c.scale(-1, 1);                       // chỉ đổi dấu trục x, điểm ảnh vẫn nguyên vẹn
-      c.drawImage(HERO, idx * HERO_W + f[0], f[1], 26, 26, 0, 0, 26, 26);
+      c.drawImage(HERO, idx * HERO_W, 0, HERO_W, HERO_H, 0, 0, HERO_W, HERO_H);
       c.restore();
     } else {
-      c.drawImage(HERO, idx * HERO_W + f[0], f[1], 26, 26, 0, 0, 26, 26);
+      c.drawImage(HERO, idx * HERO_W, 0, HERO_W, HERO_H, 2, 0, HERO_W, HERO_H);
     }
     return true;
   }
@@ -1595,13 +1680,21 @@
     pong:   24        // thắng 5 bàn         -> 120
   };
 
-  var profile = { nick: "", total: 0, best: {} };
+  var profile = { nick: "", total: 0, best: {}, trip: { ms: 0, km: 0, log: [], at: 0 } };
   try {
     var raw = JSON.parse(localStorage.getItem("chupa.profile") || "null");
     if (raw && typeof raw === "object") {
       profile.nick = String(raw.nick || "");
       profile.total = Number(raw.total) || 0;
       profile.best = (raw.best && typeof raw.best === "object") ? raw.best : {};
+      if (raw.trip && typeof raw.trip === "object") {
+        profile.trip.ms = Number(raw.trip.ms) || 0;
+        profile.trip.km = Number(raw.trip.km) || 0;
+        profile.trip.log = Array.isArray(raw.trip.log) ? raw.trip.log.slice(0, 10) : [];
+        // Đồng hồ lưu **mốc giờ thật**, không lưu số giây đã trôi. Nhờ vậy khoá
+        // màn hình, thoát trình duyệt hay tắt máy giữa chừng quay lại vẫn đúng giờ.
+        profile.trip.at = Number(raw.trip.at) || 0;
+      }
     }
   } catch (e) {}
   function saveProfile() { try { localStorage.setItem("chupa.profile", JSON.stringify(profile)); } catch (e) {} }
@@ -1823,14 +1916,16 @@
         text: "Vòng cầu vồng: nổ hết kẹo cùng loại. Đổi chỗ hai viên cầu vồng cạnh nhau là nổ cả bàn" }
     ],
 
+    // bàn kẹo đang ghép + linh vật reo mừng
     icon: function (c) {
-      rect(c, 0, 0, 26, 26, P.pinkPale);
-      rect(c, 0, 0, 26, 7, P.pink);
-      for (var i = 0; i < 4; i++) rect(c, 2 + i * 7, 2, 3, 3, [P.lemon, P.aqua, P.lime, P.straw][i]);
-      if (!heroFace(c, H_CHEER)) {
-        sBear(c, 8, 8, P.lime); sMint(c, 19, 8, P.pink);
-        sCola(c, 8, 19); sTube(c, 18, 19, P.aqua);
+      rect(c, 0, 0, 48, 48, P.pinkPale);
+      var pal = [P.straw, P.lemon, P.aqua, P.lime, P.grape, P.orange];
+      for (var r = 0; r < 6; r++) for (var q = 0; q < 6; q++) {
+        rect(c, q * 8, r * 8, 7, 7, pal[(r * 5 + q * 3) % 6]);
       }
+      rect(c, 0, 0, 48, 48, "rgba(255,248,231,.55)");
+      sBear(c, 6, 6, P.lime); sMint(c, 42, 7, P.pink); sTube(c, 5, 42, P.aqua);
+      if (!heroFull(c, H_CHEER)) sCola(c, 24, 24);
     },
 
     reset: function () {
@@ -2283,12 +2378,16 @@
         text: "Vũng kẹo chảy · vuốt lên để nhảy qua" }
     ],
 
+    // đường ba làn + linh vật đang chạy (lưng quay lại, đúng như trong game)
     icon: function (c) {
-      rect(c, 0, 0, 26, 26, P.grass);
-      rect(c, 4, 0, 18, 26, P.pinkPale);
-      rect(c, 4, 0, 1, 26, P.ink); rect(c, 21, 0, 1, 26, P.ink);
-      rect(c, 12, 1, 2, 5, P.red); rect(c, 12, 20, 2, 5, P.red);
-      if (!heroFace(c, H_FLY, true)) sLolly(c, 13, 17, P.straw, 0);
+      rect(c, 0, 0, 48, 48, P.grass);
+      rect(c, 0, 0, 48, 10, P.grassDk);
+      rect(c, 7, 0, 34, 48, P.pinkPale);
+      rect(c, 7, 0, 1, 48, P.ink); rect(c, 40, 0, 1, 48, P.ink);
+      rect(c, 18, 0, 1, 48, "rgba(43,27,20,.18)"); rect(c, 29, 0, 1, 48, "rgba(43,27,20,.18)");
+      for (var y = 2; y < 48; y += 11) { rect(c, 23, y, 2, 6, P.red); }
+      sLolly(c, 3, 22, P.straw, 0); sLolly(c, 45, 34, P.aqua, 0);
+      if (!heroFull(c, H_RUN)) sBear(c, 24, 24, P.lime);
     },
 
     reset: function () {
@@ -2419,11 +2518,15 @@
         text: "Chạm liên tục để giữ độ cao" }
     ],
 
+    // tháp ống hai bên + linh vật đang bay qua khe
     icon: function (c) {
-      rect(c, 0, 0, 26, 26, P.skyLt);
-      rect(c, 20, 0, 6, 8, PIPE.body); rect(c, 19, 6, 7, 3, PIPE.edge);
-      rect(c, 20, 21, 6, 5, PIPE.body); rect(c, 19, 19, 7, 3, PIPE.edge);
-      if (!heroFace(c, H_FLY)) sGoat(c, 9, 13, 0);
+      rect(c, 0, 0, 48, 48, P.skyLt);
+      rect(c, 0, 0, 48, 14, "#B9EBFF");
+      rect(c, 38, 0, 10, 13, PIPE.body); rect(c, 36, 11, 12, 4, PIPE.edge);
+      rect(c, 38, 39, 10, 9, PIPE.body); rect(c, 36, 36, 12, 4, PIPE.edge);
+      rect(c, 0, 0, 7, 20, PIPE.body); rect(c, 0, 18, 9, 4, PIPE.edge);
+      rect(c, 12, 6, 9, 3, "#FFFFFF"); rect(c, 26, 30, 8, 3, "#FFFFFF");
+      if (!heroFull(c, H_FLY)) sGoat(c, 20, 24, 0);
     },
 
     reset: function () {
@@ -2580,17 +2683,16 @@
         text: "Ai để lọt bóng thì đối thủ được 1 bàn" }
     ],
 
+    // sân đối kẹo: hai vợt cầu vồng, vạch giữa, bóng — linh vật đứng trong sân
     icon: function (c) {
-      rect(c, 0, 0, 26, 26, "#2A0F26");
-      for (var y = 2; y < 26; y += 6) rect(c, 12, y, 2, 3, "rgba(255,248,231,.4)");
+      rect(c, 0, 0, 48, 48, "#2A0F26");
+      for (var y = 3; y < 48; y += 7) rect(c, 23, y, 2, 4, "rgba(255,248,231,.30)");
       for (var i = 0; i < 3; i++) {
-        rect(c, 3, i * 2, 20, 2, [P.straw, P.lemon, P.aqua][i]);
-        rect(c, 3, 21 + i * 2, 20, 2, [P.aqua, P.lemon, P.straw][i]);
+        rect(c, 9, i * 3, 30, 3, [P.straw, P.lemon, P.aqua][i]);
+        rect(c, 9, 39 + i * 3, 30, 3, [P.aqua, P.lemon, P.straw][i]);
       }
-      if (!heroFace(c, H_CHEER, true)) {
-        disc(c, 13, 13, 3, P.lemon);
-        discOutline(c, 13, 13, 3, P.ink);
-      }
+      disc(c, 39, 15, 3, P.lemon); discOutline(c, 39, 15, 3, P.ink);
+      if (!heroFull(c, H_CHEER, true)) { disc(c, 24, 24, 3, P.lemon); }
     },
 
     reset: function () {
@@ -2753,7 +2855,7 @@
       b.type = "button";
       b.className = "mission" + ((profile.best[g.id] || 0) > 0 ? " cleared" : "");
       var cv = document.createElement("canvas");
-      cv.width = 26; cv.height = 26;
+      cv.width = ICON; cv.height = ICON;
       var cc = cv.getContext("2d");
       cc.imageSmoothingEnabled = false;
       g.icon(cc);
@@ -2836,6 +2938,203 @@
     cab.classList.toggle("candy", on);
   }
 
+
+  /* =========================================================
+     Bấm giờ hành trình
+
+     Bấm Bắt đầu lúc lên xe, bấm Kết thúc lúc tới nơi → ra số giờ.
+     Chọn điểm đi / điểm đến → ra số ki-lô-mét. Cộng dồn vào tổng, giữ
+     10 chuyến gần nhất. **Tách hẳn khỏi hệ điểm 4 trò chơi** — khách chốt
+     không cộng vào bảng xếp hạng, vừa khỏi đụng hệ số quy đổi đã hiệu chỉnh
+     vừa không ai khai khống quãng đường để leo bảng được.
+     ========================================================= */
+
+  /* Trang không có backend nên không gọi được API bản đồ. Toạ độ nhúng sẵn,
+     tính đường chim bay rồi nhân hệ số đường bộ. **Sửa danh sách ở ĐÚNG đây.** */
+  var ROAD_K = 1.25;
+  var PLACES = [
+    ["Hà Nội", 21.028, 105.854], ["Hải Phòng", 20.865, 106.684],
+    ["Hạ Long", 20.951, 107.077], ["Bắc Ninh", 21.186, 106.076],
+    ["Hải Dương", 20.940, 106.331], ["Hưng Yên", 20.646, 106.051],
+    ["Thái Bình", 20.450, 106.340], ["Nam Định", 20.434, 106.177],
+    ["Phủ Lý", 20.583, 105.923], ["Ninh Bình", 20.258, 105.975],
+    ["Thanh Hóa", 19.807, 105.776], ["Vinh", 18.679, 105.681],
+    ["Hà Tĩnh", 18.343, 105.906], ["Đồng Hới", 17.484, 106.600],
+    ["Đông Hà", 16.816, 107.100], ["Huế", 16.463, 107.585],
+    ["Đà Nẵng", 16.047, 108.206], ["Hội An", 15.880, 108.338],
+    ["Tam Kỳ", 15.573, 108.474], ["Quảng Ngãi", 15.120, 108.792],
+    ["Quy Nhơn", 13.782, 109.219], ["Tuy Hòa", 13.096, 109.320],
+    ["Nha Trang", 12.238, 109.196], ["Phan Rang", 11.564, 108.988],
+    ["Phan Thiết", 10.933, 108.102], ["Đà Lạt", 11.940, 108.458],
+    ["Buôn Ma Thuột", 12.688, 108.051], ["Pleiku", 13.983, 108.000],
+    ["Kon Tum", 14.350, 108.007], ["Gia Nghĩa", 11.999, 107.691],
+    ["TP Hồ Chí Minh", 10.776, 106.701], ["Thủ Dầu Một", 10.980, 106.651],
+    ["Biên Hòa", 10.957, 106.843], ["Vũng Tàu", 10.346, 107.084],
+    ["Tây Ninh", 11.310, 106.098], ["Tân An", 10.535, 106.413],
+    ["Mỹ Tho", 10.360, 106.365], ["Bến Tre", 10.243, 106.375],
+    ["Vĩnh Long", 10.253, 105.972], ["Trà Vinh", 9.934, 106.345],
+    ["Cần Thơ", 10.045, 105.746], ["Cao Lãnh", 10.459, 105.633],
+    ["Long Xuyên", 10.386, 105.436], ["Rạch Giá", 10.012, 105.081],
+    ["Vị Thanh", 9.784, 105.470], ["Sóc Trăng", 9.603, 105.974],
+    ["Bạc Liêu", 9.294, 105.722], ["Cà Mau", 9.177, 105.150],
+    ["Lào Cai", 22.486, 103.971], ["Sa Pa", 22.336, 103.844],
+    ["Yên Bái", 21.717, 104.899], ["Việt Trì", 21.322, 105.402],
+    ["Vĩnh Yên", 21.309, 105.605], ["Thái Nguyên", 21.594, 105.848],
+    ["Bắc Giang", 21.273, 106.195], ["Lạng Sơn", 21.854, 106.761],
+    ["Cao Bằng", 22.666, 106.258], ["Bắc Kạn", 22.147, 105.834],
+    ["Tuyên Quang", 21.818, 105.214], ["Hà Giang", 22.823, 104.984],
+    ["Lai Châu", 22.396, 103.471], ["Điện Biên Phủ", 21.386, 103.017],
+    ["Sơn La", 21.327, 103.914], ["Hòa Bình", 20.813, 105.338]
+  ];
+
+  function kmBetween(a, b) {
+    if (a < 0 || b < 0 || a === b) return 0;
+    var R = 6371, rad = Math.PI / 180;
+    var la1 = PLACES[a][1] * rad, lo1 = PLACES[a][2] * rad;
+    var la2 = PLACES[b][1] * rad, lo2 = PLACES[b][2] * rad;
+    var dla = la2 - la1, dlo = lo2 - lo1;
+    var h = Math.sin(dla / 2) * Math.sin(dla / 2) +
+            Math.cos(la1) * Math.cos(la2) * Math.sin(dlo / 2) * Math.sin(dlo / 2);
+    return Math.round(2 * R * Math.asin(Math.min(1, Math.sqrt(h))) * ROAD_K);
+  }
+
+  function hms(ms) {
+    var t = Math.max(0, Math.floor(ms / 1000));
+    var h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, sec = t % 60;
+    function p2(n) { return (n < 10 ? "0" : "") + n; }
+    return p2(h) + ":" + p2(m) + ":" + p2(sec);
+  }
+
+  function hmShort(ms) {
+    var t = Math.max(0, Math.floor(ms / 60000));
+    var h = Math.floor(t / 60), m = t % 60;
+    return h ? (h + " giờ " + (m ? m + " phút" : "")).trim() : (m + " phút");
+  }
+
+  var tripEl = document.getElementById("trip");
+  var tripClock = document.getElementById("tripClock");
+  var tripFrom = document.getElementById("tripFrom");
+  var tripTo = document.getElementById("tripTo");
+  var tripKmEl = document.getElementById("tripKm");
+  var tripStartBtn = document.getElementById("tripStart");
+  var tripStopBtn = document.getElementById("tripStop");
+
+  (function fillPlaces() {
+    var html = '<option value="-1">— chọn —</option>';
+    for (var i = 0; i < PLACES.length; i++) {
+      html += '<option value="' + i + '">' + PLACES[i][0] + "</option>";
+    }
+    tripFrom.innerHTML = html;
+    tripTo.innerHTML = html;
+  })();
+
+  function tripKm() {
+    return kmBetween(Number(tripFrom.value), Number(tripTo.value));
+  }
+
+  function paintTripKm() {
+    var km = tripKm();
+    if (km > 0) {
+      tripKmEl.textContent = "≈ " + km + " km";
+      tripKmEl.classList.remove("dim");
+    } else {
+      tripKmEl.textContent = "Chọn hai điểm để biết số ki-lô-mét";
+      tripKmEl.classList.add("dim");
+    }
+  }
+
+  function paintTripLog() {
+    var t = profile.trip;
+    var tot = document.getElementById("tripTotal");
+    if (!t.log.length) tot.textContent = "Chưa tích luỹ chuyến nào";
+    else tot.innerHTML = "Đã đi <b>" + hmShort(t.ms) + "</b> · <b>" + t.km + " km</b> · " +
+                         t.log.length + " chuyến";
+
+    var ul = document.getElementById("tripLog");
+    ul.innerHTML = "";
+    for (var i = 0; i < Math.min(3, t.log.length); i++) {
+      var r = t.log[i];
+      var li = document.createElement("li");
+      var em = document.createElement("em");
+      em.textContent = r.from + " → " + r.to;
+      var sp = document.createElement("span");
+      sp.textContent = hmShort(r.ms) + (r.km ? " · " + r.km + " km" : "");
+      li.appendChild(em); li.appendChild(sp);
+      ul.appendChild(li);
+    }
+  }
+
+  function paintTripClock() {
+    var running = profile.trip.at > 0;
+    tripClock.textContent = hms(running ? Date.now() - profile.trip.at : 0);
+    tripClock.classList.toggle("running", running);
+    tripStartBtn.disabled = running;
+    tripStopBtn.disabled = !running;
+  }
+
+  function startTrip() {
+    if (profile.trip.at > 0) return;
+    profile.trip.at = Date.now();
+    saveProfile();
+    paintTripClock();
+  }
+
+  function stopTrip() {
+    var t = profile.trip;
+    if (!t.at) return;
+    var ms = Date.now() - t.at;
+    t.at = 0;
+    var a = Number(tripFrom.value), b = Number(tripTo.value);
+    var km = kmBetween(a, b);
+    t.ms += ms;
+    t.km += km;
+    t.log.unshift({
+      from: a >= 0 ? PLACES[a][0] : "Chưa ghi",
+      to: b >= 0 ? PLACES[b][0] : "Chưa ghi",
+      ms: ms, km: km
+    });
+    if (t.log.length > 10) t.log.length = 10;
+    saveProfile();
+    paintTripClock();
+    paintTripLog();
+  }
+
+  function showTrip() {
+    hubEl.hidden = true; playEl.hidden = true; boardEl.hidden = true;
+    tripEl.hidden = false;
+    syncHubBackdrop();
+    paintTripClock();
+    paintTripLog();
+    paintTripKm();
+  }
+
+  tripStartBtn.addEventListener("click", startTrip);
+  tripStopBtn.addEventListener("click", stopTrip);
+  tripFrom.addEventListener("change", paintTripKm);
+  tripTo.addEventListener("change", paintTripKm);
+  document.getElementById("openTrip").addEventListener("click", showTrip);
+  document.getElementById("tripBack").addEventListener("click", backToHub);
+  document.getElementById("tripShare").addEventListener("click", function () { openShare("trip"); });
+
+  // Đồng hồ hành trình chạy riêng mỗi giây, không bám vào vòng lặp vẽ của game.
+  setInterval(function () { if (!tripEl.hidden) paintTripClock(); }, 250);
+
+  // Biểu tượng đồng hồ pixel trên nút vào
+  (function () {
+    var c = document.getElementById("tripIcon").getContext("2d");
+    c.imageSmoothingEnabled = false;
+    disc(c, 17, 18, 13, P.ink);
+    disc(c, 17, 18, 11, P.cream);
+    rect(c, 13, 2, 8, 3, P.ink);
+    rect(c, 16, 5, 2, 2, P.ink);
+    for (var i = 0; i < 12; i++) {
+      var a = i * Math.PI / 6;
+      rect(c, 17 + Math.round(Math.sin(a) * 9), 18 - Math.round(Math.cos(a) * 9), 1, 1, P.inkSoft);
+    }
+    rect(c, 17, 11, 1, 8, P.red);
+    rect(c, 17, 18, 6, 1, P.ink);
+  })();
+
   function repaintMissionIcons() {
     if (!gridEl) return;
     Array.prototype.forEach.call(gridEl.children, function (el, i) {
@@ -2851,11 +3150,13 @@
   function paintStamps() {
     totalPtsEl.textContent = profile.total;
     var rank = rankOf(profile.total);
-    var who = profile.nick ? profile.nick + " · " : "";
-    rankLineEl.textContent = who + (profile.total > 0
+    // Thứ hạng đứng TRƯỚC biệt danh: hàng này hẹp nên hay bị cắt bằng dấu ba
+    // chấm, cắt mất biệt danh thì không sao chứ cắt mất thứ hạng là hỏng.
+    var who = profile.nick ? " · " + profile.nick : "";
+    rankLineEl.textContent = (profile.total > 0
       ? (rank ? "Bạn đang hạng " + rank : "Chưa lọt top 10 — còn " +
           (DEMO_RANKS[DEMO_RANKS.length - 1][1] - profile.total) + " điểm nữa")
-      : "chơi để tích điểm");
+      : "Chơi để tích điểm") + who;
     Array.prototype.forEach.call(gridEl.children, function (el, i) {
       if (GAMES[i]) el.classList.toggle("cleared", (profile.best[GAMES[i].id] || 0) > 0);
     });
@@ -2893,6 +3194,7 @@
     active = g;
     running = false;
     hubEl.hidden = true;
+    tripEl.hidden = true;
     playEl.hidden = false;
     syncHubBackdrop();
     playTitle.textContent = g.name;
@@ -3041,6 +3343,7 @@
     active = null;
     playEl.hidden = true;
     boardEl.hidden = true;
+    tripEl.hidden = true;
     hubEl.hidden = false;
     syncHubBackdrop();
     paintStamps();
@@ -3054,6 +3357,7 @@
   function openBoard() {
     hubEl.hidden = true;
     playEl.hidden = true;
+    tripEl.hidden = true;
     boardEl.hidden = false;
     syncHubBackdrop();
     buildTabs();
@@ -3440,6 +3744,8 @@
 
     var nick = profile.nick || "Bạn";
     var rank = rankOf(profile.total);
+    var isTrip = shareMode === "trip";
+    var lastTrip = profile.trip.log[0];
 
     // tên người chơi, thu cỡ nếu dài để không đụng huy hiệu hạng
     var ns = fitFont(c, nick, "800", 40, "Baloo 2", 430);
@@ -3450,13 +3756,16 @@
     c.fillText(nick, 40, 378);
     var nickW = c.measureText(nick).width;
 
-    // huy hiệu hạng nằm ngay cạnh tên
+    // huy hiệu hạng nằm ngay cạnh tên — thẻ chuyến đi thì thay bằng chặng vừa đi
     var bx = 40 + nickW + 18;
     c.font = "800 20px \"Baloo 2\", sans-serif";
-    var badge = rank ? "HẠNG #" + rank : "CHƯA XẾP HẠNG";
+    var badge = isTrip
+      ? (lastTrip ? lastTrip.from + " → " + lastTrip.to : "HÀNH TRÌNH")
+      : (rank ? "HẠNG #" + rank : "CHƯA XẾP HẠNG");
     var bw = c.measureText(badge).width + 24;
-    rect(c, bx, 354, bw, 30, rank ? "#E4002B" : "rgba(255,255,255,.16)");
-    rect(c, bx, 354, bw, 3, rank ? "#FF5C7A" : "rgba(255,255,255,.22)");
+    var hot = isTrip ? !!lastTrip : !!rank;
+    rect(c, bx, 354, bw, 30, hot ? "#E4002B" : "rgba(255,255,255,.16)");
+    rect(c, bx, 354, bw, 3, hot ? "#FF5C7A" : "rgba(255,255,255,.22)");
     c.fillStyle = P.white;
     c.fillText(badge, bx + 12, 376);
 
@@ -3464,11 +3773,24 @@
 
     /* Dải thống kê: tổng điểm đứng đầu rồi tới kỷ lục bốn game, mỗi cột là số
        to trên nhãn nhỏ — giống dải chỉ số của thẻ khoe game đấu. */
-    var cols = [{ v: profile.total, name: "TỔNG ĐIỂM", unit: "điểm", hero: true }];
-    GAMES.forEach(function (gm) {
-      var cfg = BOARDS[gm.id];
-      cols.push({ v: profile.best[cfg ? cfg.key : gm.id] || 0, name: gm.name, unit: cfg ? cfg.unit : "" });
-    });
+    var cols;
+    if (isTrip) {
+      var tp = profile.trip;
+      // Gộp giờ và phút vào một cột "12g34": tách hai cột thì nhìn rời rạc.
+      var th = Math.floor(tp.ms / 3600000), tm = Math.floor(tp.ms / 60000) % 60;
+      cols = [
+        { v: tp.km, name: "ĐÃ ĐI", unit: "ki-lô-mét", hero: true },
+        { v: th + "g" + (tm < 10 ? "0" : "") + tm, name: "Trên đường", unit: "giờ phút" },
+        { v: tp.log.length, name: "Chuyến đi", unit: "lượt" },
+        { v: profile.total, name: "Điểm game", unit: "điểm" }
+      ];
+    } else {
+      cols = [{ v: profile.total, name: "TỔNG ĐIỂM", unit: "điểm", hero: true }];
+      GAMES.forEach(function (gm) {
+        var cfg = BOARDS[gm.id];
+        cols.push({ v: profile.best[cfg ? cfg.key : gm.id] || 0, name: gm.name, unit: cfg ? cfg.unit : "" });
+      });
+    }
 
     cols.forEach(function (col, i) {
       var cx = 40 + i * 132;
@@ -3497,7 +3819,9 @@
 
   var shareFs = document.getElementById("shareFs");
   var fsImg = document.getElementById("fsImg");
-  function openShare() {
+  var shareMode = "game";
+  function openShare(mode) {
+    shareMode = mode === "trip" ? "trip" : "game";
     // Chờ phông tải xong rồi mới vẽ, không thì chữ rơi về phông dự phòng.
     function go() {
       buildShareCard();
@@ -3564,7 +3888,9 @@
     }
   }
 
-  document.getElementById("shareRank").addEventListener("click", openShare);
+  // Bọc lại chứ đừng truyền thẳng openShare: trình duyệt sẽ đưa sự kiện chuột
+  // vào tham số đầu, làm lệch kiểu thẻ cần vẽ.
+  document.getElementById("shareRank").addEventListener("click", function () { openShare("game"); });
   document.getElementById("shareBack").addEventListener("click", function () {
     closeFs();
     sharePanel.hidden = true;
