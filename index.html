@@ -1095,6 +1095,18 @@
     }
   }
 
+  /* Shared twinkle. `gap` is the full cycle and only its first second shows a
+     star, so a larger gap means rarer flashes — that is the dial that keeps the
+     trophy livelier than the medals. */
+  function twinkle(c, x, y, pos, t, speed, gap, maxR, colA, colB) {
+    for (var i = 0; i < pos.length; i++) {
+      var ph = (t * speed + i * 0.9) % gap;
+      if (ph > 1) continue;
+      var r = (maxR > 1 && ph > 0.3 && ph < 0.7) ? 2 : 1;
+      star4(c, x + pos[i][0], y + pos[i][1], r, ph < 0.5 ? colA : colB);
+    }
+  }
+
   // A highlight band sweeping across a disc, clipped per row so it stays crisp.
   function sheen(c, cx, cy, r, phase, alpha) {
     var sweep = ((phase % 1) * (r * 4 + 8)) - r - 4;
@@ -1136,14 +1148,9 @@
     rect(c, x + 14, y + 9, 1, 2, deep);
     rect(c, x + 13, y + 15, 6, 1, deep);
 
-    // gold gets its own twinkle: six stars on staggered phases
-    var pos = [[3, 4], [28, 3], [2, 18], [29, 17], [17, 1], [25, 21], [6, 25]];
-    for (var i = 0; i < pos.length; i++) {
-      var ph = (t * 1.6 + i * 0.9) % 2.6;
-      if (ph > 1) continue;
-      var r = ph < 0.3 ? 1 : (ph < 0.7 ? 2 : 1);
-      star4(c, x + pos[i][0], y + pos[i][1], r, ph < 0.5 ? "#FFFFFF" : lite);
-    }
+    // Gold: many points, fast, and big enough to grow to two pixels.
+    twinkle(c, x, y, [[3, 4], [28, 3], [2, 18], [29, 17], [17, 1], [25, 21], [6, 25]],
+            t, 1.6, 2.6, 2, "#FFFFFF", lite);
   }
 
   function sMedal(c, x, y, pal, t) {
@@ -1170,8 +1177,12 @@
     star5(c, x + 12, y + 7, pal.deep);
     discOutline(c, x + 16, y + 11, 10, ink);
 
-    // basic catch of light, no twinkle
     sheen(c, x + 16, y + 11, 8, (t * 0.35) % 1, 0.4);
+
+    // Silver and bronze twinkle too, but fewer points, slower, never growing
+    // past one pixel — so the trophy still reads as the better prize.
+    twinkle(c, x, y, [[4, 3], [28, 6], [2, 15], [29, 14]],
+            t, 0.95, 3.4, 1, "#FFFFFF", pal.lite);
   }
 
   var CANDY = {
