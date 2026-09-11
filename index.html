@@ -1207,6 +1207,37 @@
             t, 0.95, 3.4, 1, "#FFFFFF", pal.lite);
   }
 
+  /* Each power wears a different moving badge, because a player has to tell
+     them apart at a glance mid-cascade: rails that run sideways or up, a
+     ticking red ring, or a turning rainbow. */
+  var AURA_COLS = [P.straw, P.orange, P.lemon, P.lime, P.aqua, P.grape];
+
+  function drawAura(c, sp, cx, cy, t) {
+    var i, ang;
+    if (sp === "row") {
+      rect(c, cx - 10, cy - 10, 20, 2, P.sun);
+      rect(c, cx - 10, cy + 8, 20, 2, P.sun);
+      var ox = Math.floor((t * 34) % 8);
+      for (i = -12 + ox; i < 10; i += 8) rect(c, cx + i, cy - 1, 5, 2, P.cream);
+    } else if (sp === "col") {
+      rect(c, cx - 10, cy - 10, 2, 20, P.sun);
+      rect(c, cx + 8, cy - 10, 2, 20, P.sun);
+      var oy = Math.floor((t * 34) % 8);
+      for (i = -12 + oy; i < 10; i += 8) rect(c, cx - 1, cy + i, 2, 5, P.cream);
+    } else if (sp === "bomb") {
+      discOutline(c, cx, cy, 9 + Math.round(Math.sin(t * 7) * 1.4), P.red);
+      var on = (Math.floor(t * 8) % 2) === 0 ? P.sun : P.cream;
+      rect(c, cx - 10, cy - 10, 3, 3, on); rect(c, cx + 7, cy - 10, 3, 3, on);
+      rect(c, cx - 10, cy + 7, 3, 3, on); rect(c, cx + 7, cy + 7, 3, 3, on);
+    } else if (sp === "color") {
+      for (i = 0; i < 20; i++) {
+        ang = (i / 20) * Math.PI * 2 + t * 2.2;
+        rect(c, Math.round(cx + Math.cos(ang) * 9), Math.round(cy + Math.sin(ang) * 9),
+             2, 2, AURA_COLS[(i + Math.floor(t * 7)) % 6]);
+      }
+    }
+  }
+
   var CANDY = {
     lolly: sLolly, bear: sBear, cola: function (c, x, y) { sCola(c, x, y); },
     belt: function (c, x, y) { sBelt(c, x, y); }, tube: sTube, mint: sMint
@@ -1418,6 +1449,11 @@
 
   var TILE_COL = [P.straw, P.lime, P.cola, P.aqua, P.aqua, P.pink];
 
+  /* Chance that a newly dropped tile carries a power. Read as frequency, not as
+     rarity rank: line clears turn up most often, the 3x3 less often, and the
+     whole-colour tile is the prize. Tune here and nowhere else. */
+  var SP_RATE = { row: 0.021, col: 0.021, bomb: 0.011, color: 0.004 };
+
   var match = {
     id: "match",
     name: "Ghép Kẹo",
@@ -1433,13 +1469,17 @@
     phase: "idle", anim: 0, chain: 0,
     swapA: null, swapB: null,
     sel: null, dragFrom: null,
-    sparks: [], pops: [], glow: 0,
+    sparks: [], pops: [], beams: [], glow: 0,
 
     legend: [
       { icon: function (g) { sBear(g, 8, 18, P.lime); sBear(g, 18, 18, P.lime); sBear(g, 28, 18, P.lime); },
-        text: "Xếp 3 viên cùng loại thành hàng" },
-      { icon: function (g) { sBelt(g, 18, 11); sTube(g, 18, 26, P.aqua); },
-        text: "Nổ dây chuyền càng dài, điểm càng nhân" }
+        text: "Xếp 3 viên cùng loại. Nổ dây chuyền càng dài, điểm càng nhân" },
+      { icon: function (g) { sMint(g, 18, 18, P.pink); drawAura(g, "row", 18, 18, 0.2); },
+        text: "Viền vàng chạy ngang hoặc dọc: nổ trọn hàng hoặc trọn cột" },
+      { icon: function (g) { sBear(g, 18, 18, P.lime); drawAura(g, "bomb", 18, 18, 0); },
+        text: "Vòng đỏ nhấp nháy: nổ 9 ô vuông quanh nó" },
+      { icon: function (g) { sCola(g, 18, 18); drawAura(g, "color", 18, 18, 0); },
+        text: "Vòng cầu vồng: nổ hết kẹo cùng loại. Đổi chỗ hai viên cầu vồng cạnh nhau là nổ cả bàn" }
     ],
 
     icon: function (c) {
@@ -1455,7 +1495,7 @@
       this.phase = "idle"; this.anim = 0; this.chain = 0;
       this.sel = null; this.dragFrom = null;
       this.swapA = null; this.swapB = null;
-      this.sparks = []; this.pops = []; this.glow = 0; this.swaps = 0;
+      this.sparks = []; this.pops = []; this.beams = []; this.glow = 0; this.swaps = 0;
       this.board = [];
       for (var r = 0; r < this.ROWS; r++) {
         this.board.push([]);
@@ -1468,8 +1508,18 @@
       }
     },
 
-    freshTile: function () {
-      return { t: (Math.random() * 6) | 0, dx: 0, dy: 0, sx: 0, sy: 0, vy: 0, pop: 0, dying: false };
+    // Powers only appear on tiles that drop in, never on the opening board —
+    // starting on a free board-wipe would read as a bug.
+    freshTile: function (allowPower) {
+      var t = { t: (Math.random() * 6) | 0, dx: 0, dy: 0, sx: 0, sy: 0, vy: 0, pop: 0, dying: false, sp: null };
+      if (allowPower) {
+        var r = Math.random(), acc = SP_RATE.color;
+        if (r < acc) t.sp = "color";
+        else if (r < (acc += SP_RATE.bomb)) t.sp = "bomb";
+        else if (r < (acc += SP_RATE.col)) t.sp = "col";
+        else if (r < acc + SP_RATE.row) t.sp = "row";
+      }
+      return t;
     },
 
     eachTile: function (fn) {
@@ -1548,15 +1598,70 @@
       this.sel = null; this.dragFrom = null;
     },
 
+    /* A cleared power drags more cells in with it, and those cells may hold
+       powers of their own — so this keeps walking outward until nothing new is
+       pulled in. That is what makes chains of powers fire off each other. */
+    expandPowers: function (seed) {
+      var self = this, seen = {}, queue = [], out = [];
+      function push(r, c) {
+        if (r < 0 || c < 0 || r >= self.ROWS || c >= self.COLS) return;
+        var k = r + ":" + c;
+        if (seen[k] || !self.board[r][c]) return;
+        seen[k] = true;
+        queue.push({ r: r, c: c });
+        out.push({ r: r, c: c });
+      }
+      for (var i = 0; i < seed.length; i++) push(seed[i].r, seed[i].c);
+
+      var guard = 0;
+      while (queue.length && guard++ < 400) {
+        var cell = queue.shift();
+        var t = self.board[cell.r][cell.c];
+        if (!t || !t.sp) continue;
+        var r, c;
+        if (t.sp === "row") {
+          self.beams.push({ kind: "row", idx: cell.r, life: 0.45 });
+          for (c = 0; c < self.COLS; c++) push(cell.r, c);
+        } else if (t.sp === "col") {
+          self.beams.push({ kind: "col", idx: cell.c, life: 0.45 });
+          for (r = 0; r < self.ROWS; r++) push(r, cell.c);
+        } else if (t.sp === "bomb") {
+          self.beams.push({ kind: "bomb", r: cell.r, c: cell.c, life: 0.45 });
+          for (r = cell.r - 1; r <= cell.r + 1; r++)
+            for (c = cell.c - 1; c <= cell.c + 1; c++) push(r, c);
+        } else if (t.sp === "color") {
+          self.beams.push({ kind: "color", r: cell.r, c: cell.c, life: 0.6 });
+          for (r = 0; r < self.ROWS; r++) for (c = 0; c < self.COLS; c++) {
+            if (self.board[r][c] && self.board[r][c].t === t.t) push(r, c);
+          }
+        }
+      }
+      return out;
+    },
+
+    wipeBoard: function () {
+      var cells = [];
+      for (var r = 0; r < this.ROWS; r++) for (var c = 0; c < this.COLS; c++) {
+        if (this.board[r][c]) cells.push({ r: r, c: c });
+      }
+      this.beams.push({ kind: "all", life: 0.9 });
+      this.clearCells(cells, 4);
+    },
+
     beginClear: function () {
       var ms = this.findMatches();
       if (!ms.length) { this.settle(); return; }
-      var gain = Math.round(ms.length * 12 * (1 + this.chain * 0.35));
+      this.clearCells(this.expandPowers(ms), this.chain);
+    },
+
+    clearCells: function (ms, chain) {
+      var gain = Math.round(ms.length * 12 * (1 + chain * 0.35));
       this.score += gain;
       statMain.textContent = this.score;
       var sx = 0, sy = 0, n = 0;
       for (var i = 0; i < ms.length; i++) {
         var m = ms[i], t = this.board[m.r][m.c];
+        void chain;
         if (!t || t.dying) continue;
         t.dying = true; t.pop = 0.3;
         var px = this.OX + m.c * this.CELL + this.CELL / 2;
@@ -1570,7 +1675,7 @@
       if (n) {
         this.pops.push({
           x: sx / n, y: sy / n, life: 1,
-          text: (this.chain > 0 ? "x" + (this.chain + 1) + " " : "") + "+" + gain
+          text: (chain > 0 ? "x" + (chain + 1) + " " : "") + "+" + gain
         });
       }
       this.phase = "clear"; this.anim = 0.3;
@@ -1594,7 +1699,7 @@
         // order and stay evenly spaced on the way down.
         var drop = (write + 1) * this.CELL;
         for (var r2 = write; r2 >= 0; r2--) {
-          var nt = this.freshTile();
+          var nt = this.freshTile(true);
           nt.dy = -drop;
           this.board[r2][c] = nt;
         }
@@ -1610,6 +1715,7 @@
           if (r2 >= this.ROWS || c2 >= this.COLS) continue;
           var A = this.board[r][c], B = this.board[r2][c2];
           if (!A || !B) continue;
+          if (A.sp === "color" && B.sp === "color") return true;
           this.board[r][c] = B; this.board[r2][c2] = A;
           var ok = this.findMatches().length > 0;
           this.board[r][c] = A; this.board[r2][c2] = B;
@@ -1644,6 +1750,10 @@
         this.pops[i].life -= dt * 1.15;
         if (this.pops[i].life <= 0) this.pops.splice(i, 1);
       }
+      for (i = this.beams.length - 1; i >= 0; i--) {
+        this.beams[i].life -= dt;
+        if (this.beams[i].life <= 0) this.beams.splice(i, 1);
+      }
       this.glow += dt;
 
       if (this.phase === "swap" || this.phase === "swapback") {
@@ -1657,6 +1767,15 @@
           if (A) { A.dx = 0; A.dy = 0; }
           if (B) { B.dx = 0; B.dy = 0; }
           if (this.phase === "swap") {
+            // Two rainbow tiles traded with each other take the whole board.
+            // This is the one swap allowed to be legal without forming a match.
+            if (A && B && A.sp === "color" && B.sp === "color") {
+              this.swaps++;
+              statSub.textContent = this.swaps + " NƯỚC";
+              this.chain = 0;
+              this.wipeBoard();
+              return;
+            }
             if (this.findMatches().length) {
               this.swaps++;
               statSub.textContent = this.swaps + " NƯỚC";
@@ -1699,6 +1818,43 @@
       }
     },
 
+    drawBeams: function (c) {
+      var BX = this.OX, BY = this.OY, CE = this.CELL;
+      for (var i = 0; i < this.beams.length; i++) {
+        var b = this.beams[i], k;
+        if (b.kind === "row") {
+          var a = Math.max(0, Math.min(1, b.life / 0.45));
+          var y = BY + b.idx * CE + CE / 2;
+          var h = Math.max(2, Math.round(a * CE));
+          rect(c, BX, y - h / 2, this.COLS * CE, h, "rgba(255,246,230," + (a * 0.8).toFixed(2) + ")");
+          rect(c, BX, y - 1, this.COLS * CE, 2, "rgba(255,209,0," + a.toFixed(2) + ")");
+        } else if (b.kind === "col") {
+          var a2 = Math.max(0, Math.min(1, b.life / 0.45));
+          var x = BX + b.idx * CE + CE / 2;
+          var w = Math.max(2, Math.round(a2 * CE));
+          rect(c, x - w / 2, BY, w, this.ROWS * CE, "rgba(255,246,230," + (a2 * 0.8).toFixed(2) + ")");
+          rect(c, x - 1, BY, 2, this.ROWS * CE, "rgba(255,209,0," + a2.toFixed(2) + ")");
+        } else if (b.kind === "bomb") {
+          var a3 = Math.max(0, Math.min(1, b.life / 0.45));
+          var bx = BX + b.c * CE + CE / 2, by = BY + b.r * CE + CE / 2;
+          var rr = Math.round((1 - a3) * CE * 1.8) + 3;
+          discOutline(c, bx, by, rr, "rgba(228,0,43," + a3.toFixed(2) + ")");
+          discOutline(c, bx, by, Math.max(2, rr - 4), "rgba(255,209,0," + (a3 * 0.85).toFixed(2) + ")");
+        } else if (b.kind === "color") {
+          var cx2 = BX + b.c * CE + CE / 2, cy2 = BY + b.r * CE + CE / 2;
+          var base = Math.round((1 - b.life / 0.6) * CE * 3.4);
+          for (k = 0; k < 6; k++) discOutline(c, cx2, cy2, Math.max(1, base - k * 3), AURA_COLS[k]);
+        } else if (b.kind === "all") {
+          var a4 = Math.max(0, Math.min(1, b.life / 0.9));
+          rect(c, BX, BY, this.COLS * CE, this.ROWS * CE, "rgba(255,255,255," + (a4 * 0.7).toFixed(2) + ")");
+          for (k = 0; k < 6; k++) {
+            var ry = BY + Math.round(((1 - a4) * this.ROWS * CE + k * 4)) % (this.ROWS * CE);
+            rect(c, BX, ry, this.COLS * CE, 3, AURA_COLS[k]);
+          }
+        }
+      }
+    },
+
     draw: function (c) {
       c.drawImage(bgSky, 0, 0);
 
@@ -1735,7 +1891,10 @@
         } else {
           drawCandy(c, KINDS[t.t], cx, cy - lift, TILE_COL[t.t], 0);
         }
+        if (t.sp && !t.dying) drawAura(c, t.sp, cx, cy, this.glow);
       }
+
+      this.drawBeams(c);
 
       // marching border so the chosen cell clearly reads as selected
       if (this.sel) {
