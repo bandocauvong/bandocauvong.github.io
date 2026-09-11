@@ -159,6 +159,63 @@
     image-rendering: auto;
     border: 3px solid var(--ink); box-shadow: 0 4px 0 rgba(43,27,20,.3);
   }
+  /* Thẻ khoe cần rộng hơn thẻ nhập biệt danh: ảnh là nội dung chính. */
+  .share-card { width: min(520px, 100%); gap: 9px; padding: 18px 12px 20px; }
+  .share-bar {
+    align-self: stretch; display: flex; align-items: center;
+    justify-content: space-between; gap: 10px; margin-top: 2px;
+  }
+  .share-acts { display: flex; gap: 8px; }
+  /* Nút pixel: viền dày, bóng đổ cứng, biểu tượng vẽ bằng ô vuông. */
+  .pxbtn {
+    width: 42px; height: 42px; flex: none; padding: 0; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink); background: var(--sun); border: 3px solid var(--ink);
+    box-shadow: 0 4px 0 var(--sun-dk);
+    transition: transform .1s, box-shadow .1s, background .2s;
+  }
+  .pxbtn:hover { background: var(--sun-lt); }
+  .pxbtn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--sun-dk); }
+  .pxbtn:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+  .pxbtn svg { width: 20px; height: 20px; display: block; }
+  /* Cụm "chia sẻ đến" chỉ là hình trang trí, không bấm được. */
+  .share-to { display: flex; align-items: center; gap: 6px; pointer-events: none; user-select: none; }
+  .share-to b {
+    font-size: .64rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-soft); margin-right: 1px;
+  }
+  .share-to svg { width: 26px; height: 26px; display: block; flex: none; }
+
+  /* Xem ảnh to: trang khoá dọc nên phải tự xoay khung 90 độ. */
+  #shareFs { position: fixed; inset: 0; z-index: 70; background: #14090F; }
+  #shareFs[hidden] { display: none; }
+  .fs-rot {
+    position: absolute; top: 50%; left: 50%;
+    width: 100vh; width: 100svh; height: 100vw;
+    transform: translate(-50%, -50%) rotate(90deg);
+  }
+  @media (orientation: landscape) {
+    .fs-rot { width: 100vw; height: 100vh; height: 100svh; transform: translate(-50%, -50%); }
+  }
+  #fsImg {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    max-width: 100%; max-height: 100%; display: block; image-rendering: auto;
+  }
+  .fs-btn {
+    position: absolute; top: calc(10px + env(safe-area-inset-top)); z-index: 2;
+    width: 42px; height: 42px; padding: 0; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--cream); background: rgba(20,9,15,.72);
+    border: 3px solid rgba(255,248,231,.85);
+  }
+  .fs-btn:active { background: rgba(20,9,15,.95); }
+  .fs-btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+  .fs-btn svg { width: 20px; height: 20px; display: block; }
+  .fs-back { left: 10px; }
+  .fs-dl { right: 10px; }
+  /* Người chơi phải xoay máy ngang mới xem được ảnh to,
+     nên tấm chắn "xoay dọc điện thoại" phải tắt lúc đó. */
+  body.fsopen .rotate { display: none !important; }
   .ob-card .lede { margin: 0; font-size: .85rem; line-height: 1.5; color: var(--ink-soft); max-width: 28ch; }
   .ob-card label {
     align-self: stretch; text-align: left; margin-top: 4px;
@@ -487,12 +544,28 @@
 </div>
 
 <section class="onboard" id="sharePanel" hidden>
-  <div class="ob-card">
+  <div class="ob-card share-card">
     <p class="qr-title">Ảnh thành tích</p>
     <canvas id="shareCanvas" width="960" height="540"></canvas>
-    <p class="lede" id="shareHint">Nhấn giữ vào ảnh để lưu về máy.</p>
-    <button class="btn" id="shareSend" type="button">Chia sẻ ảnh</button>
+    <div class="share-bar">
+      <div class="share-acts">
+        <button class="pxbtn" id="shareFull" type="button" title="Xem to" aria-label="Xem ảnh to toàn màn hình"><svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><g fill="currentColor"><rect x="0" y="0" width="4" height="1"/><rect x="0" y="0" width="1" height="4"/><rect x="5" y="0" width="4" height="1"/><rect x="8" y="0" width="1" height="4"/><rect x="0" y="8" width="4" height="1"/><rect x="0" y="5" width="1" height="4"/><rect x="5" y="8" width="4" height="1"/><rect x="8" y="5" width="1" height="4"/></g></svg></button>
+        <button class="pxbtn" id="shareDl" type="button" title="Tải xuống" aria-label="Tải ảnh về máy"><svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><g fill="currentColor"><rect x="4" y="0" width="1" height="4"/><rect x="2" y="4" width="5" height="1"/><rect x="3" y="5" width="3" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="1" y="8" width="7" height="1"/></g></svg></button>
+      </div>
+      <div class="share-to" aria-hidden="true">
+        <b>Chia sẻ đến</b><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="12" fill="#1877F2"/><path fill="#FFF" d="M13.3 19.5v-6.6h2.2l.33-2.57H13.3V8.7c0-.74.2-1.25 1.27-1.25h1.36V5.15a18 18 0 0 0-1.98-.1c-1.96 0-3.3 1.2-3.3 3.4v1.88H8.44v2.57h2.2v6.6z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><defs><linearGradient id="igg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#FEDA75"/><stop offset=".35" stop-color="#FA7E1E"/><stop offset=".7" stop-color="#D62976"/><stop offset="1" stop-color="#962FBF"/></linearGradient></defs><rect x="0" y="0" width="24" height="24" rx="7" fill="url(#igg)"/><rect x="5.5" y="5.5" width="13" height="13" rx="4.2" fill="none" stroke="#FFF" stroke-width="1.7"/><circle cx="12" cy="12" r="3.2" fill="none" stroke="#FFF" stroke-width="1.7"/><circle cx="16.3" cy="7.7" r="1.05" fill="#FFF"/></svg><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="12" fill="#3D2A22"/><g fill="#FFF8E7"><circle cx="7" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="17" cy="12" r="1.7"/></g></svg>
+      </div>
+    </div>
+    <p class="lede" id="shareHint">Bấm nút vuông để xem ảnh to, hoặc tải ảnh về máy.</p>
     <button class="btn ghost" id="shareClose" type="button">Đóng</button>
+  </div>
+</section>
+
+<section id="shareFs" hidden>
+  <div class="fs-rot">
+    <img id="fsImg" alt="Ảnh thành tích">
+    <button class="fs-btn fs-back" id="fsBack" type="button" aria-label="Quay lại"><svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><g fill="currentColor"><rect x="0" y="4" width="1" height="1"/><rect x="1" y="3" width="1" height="3"/><rect x="2" y="2" width="1" height="5"/><rect x="3" y="4" width="6" height="1"/></g></svg></button>
+    <button class="fs-btn fs-dl" id="fsDl" type="button" aria-label="Tải ảnh về máy"><svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><g fill="currentColor"><rect x="4" y="0" width="1" height="4"/><rect x="2" y="4" width="5" height="1"/><rect x="3" y="5" width="3" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="1" y="8" width="7" height="1"/></g></svg></button>
   </div>
 </section>
 
@@ -3240,36 +3313,94 @@
   var sharePanel = document.getElementById("sharePanel");
   var shareHint = document.getElementById("shareHint");
 
+  var shareFs = document.getElementById("shareFs");
+  var fsImg = document.getElementById("fsImg");
+  var HINT_IDLE = "Bấm nút vuông để xem ảnh to, hoặc tải ảnh về máy.";
+
   function openShare() {
     // Chờ phông tải xong rồi mới vẽ, không thì chữ rơi về phông dự phòng.
     function go() {
       buildShareCard();
-      shareHint.textContent = "Nhấn giữ vào ảnh để lưu về máy.";
+      shareHint.textContent = HINT_IDLE;
       sharePanel.hidden = false;
     }
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(go).catch(go);
     else go();
   }
 
+  function closeFs() {
+    shareFs.hidden = true;
+    document.body.classList.remove("fsopen");
+  }
+
+  function openFs() {
+    try { fsImg.src = document.getElementById("shareCanvas").toDataURL("image/png"); }
+    catch (e) { shareHint.textContent = "Máy không mở được ảnh to."; return; }
+    // Trải rộng ảnh xoay ngang thì tấm chắn "xoay dọc" phải tắt.
+    document.body.classList.add("fsopen");
+    shareFs.hidden = false;
+  }
+
+  // Tải về: ưu tiên blob URL (tên file đẹp hơn trên Android), nhưng toBlob
+  // có máy không gọi lại callback bao giờ — nên có đồng hồ canh lùi về data URI.
+  function saveShare() {
+    var cv = document.getElementById("shareCanvas");
+    // Bỏ dấu tiếng Việt cho tên file dễ đọc, không ra một dãy gạch dưới.
+    var raw = profile.nick || "player";
+    try { raw = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); } catch (e) {}
+    var tag = raw.replace(/\u0111/g, "d").replace(/\u0110/g, "D")
+                 .replace(/[^0-9A-Za-z_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 20);
+    var name = "bandocauvong-" + (tag || "player") + ".png";
+    var done = false;
+
+    function push(href, revoke) {
+      if (done) return;
+      done = true;
+      try {
+        var a = document.createElement("a");
+        a.href = href; a.download = name; a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.parentNode.removeChild(a);
+        if (revoke) setTimeout(function () { URL.revokeObjectURL(href); }, 8000);
+        shareHint.textContent = "Đã xuất ảnh. Máy nào không tự lưu thì nhấn giữ vào ảnh.";
+      } catch (e) {
+        shareHint.textContent = "Máy không tải được — nhấn giữ vào ảnh để lưu.";
+      }
+    }
+
+    function fallback() {
+      if (done) return;
+      try { push(cv.toDataURL("image/png"), false); }
+      catch (e) {
+        done = true;
+        shareHint.textContent = "Máy không tải được — nhấn giữ vào ảnh để lưu.";
+      }
+    }
+
+    if (cv.toBlob && window.URL && URL.createObjectURL) {
+      setTimeout(fallback, 900);
+      try {
+        cv.toBlob(function (blob) {
+          if (blob) push(URL.createObjectURL(blob), true);
+          else fallback();
+        }, "image/png");
+      } catch (e) { fallback(); }
+    } else {
+      fallback();
+    }
+  }
+
   document.getElementById("shareRank").addEventListener("click", openShare);
   document.getElementById("endShare").addEventListener("click", openShare);
-  document.getElementById("shareClose").addEventListener("click", function () { sharePanel.hidden = true; });
-
-  document.getElementById("shareSend").addEventListener("click", function () {
-    var cv = document.getElementById("shareCanvas");
-    if (!cv.toBlob) { shareHint.textContent = "Máy không hỗ trợ chia sẻ trực tiếp — nhấn giữ vào ảnh để lưu."; return; }
-    cv.toBlob(function (blob) {
-      if (!blob) return;
-      try {
-        var file = new File([blob], "bandocauvong.png", { type: "image/png" });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          navigator.share({ files: [file], title: "Bản đồ cầu vồng" }).catch(function () {});
-          return;
-        }
-      } catch (e) {}
-      shareHint.textContent = "Máy không mở được khung chia sẻ — nhấn giữ vào ảnh để lưu.";
-    }, "image/png");
+  document.getElementById("shareClose").addEventListener("click", function () {
+    closeFs();
+    sharePanel.hidden = true;
   });
+  document.getElementById("shareFull").addEventListener("click", openFs);
+  document.getElementById("shareDl").addEventListener("click", saveShare);
+  document.getElementById("fsBack").addEventListener("click", closeFs);
+  document.getElementById("fsDl").addEventListener("click", saveShare);
 
   document.getElementById("openQR").addEventListener("click", function () { qrPanel.hidden = false; });
   document.getElementById("qrClose").addEventListener("click", function () { qrPanel.hidden = true; });

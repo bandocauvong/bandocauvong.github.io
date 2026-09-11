@@ -14,3 +14,11 @@ sprites.png
 # Âm thanh: chưa nối vào game, và music.mp3 đang 2,8 MB cần rút gọn trước.
 # Bỏ ignore khi làm phần âm thanh.
 *.mp3
+
+# Tài liệu nội bộ: có chi tiết chiến dịch của khách và ghi chú lỗ hổng còn tồn.
+# Repo này là web công khai nên không đưa lên.
+CLAUDE.md
+BAN-GIAO.md
+
+# Ảnh thử tải xuống lúc kiểm chứng
+bandocauvong-*.png
