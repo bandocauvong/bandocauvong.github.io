@@ -160,18 +160,16 @@
     border: 3px solid var(--ink); box-shadow: 0 4px 0 rgba(43,27,20,.3);
   }
   /* Thẻ khoe cần rộng hơn thẻ nhập biệt danh: ảnh là nội dung chính. */
-  .share-card { width: min(520px, 100%); gap: 9px; padding: 18px 12px 20px; }
+  .share-card { width: min(520px, 100%); gap: 9px; padding: 14px 12px 18px; position: relative; }
   .share-bar {
     align-self: stretch; display: flex; align-items: center;
     justify-content: space-between; gap: 10px; margin-top: 2px;
   }
   .share-acts { display: flex; gap: 8px; }
-  /* Nụt quay lại nằm ở góc trên-trái của cả khung, không phải trong thẻ. */
-  .share-back {
-    position: absolute; z-index: 2;
-    top: calc(12px + env(safe-area-inset-top));
-    left: calc(12px + env(safe-area-inset-left));
-  }
+  /* Nút quay lại nằm trong góc trên-trái của thẻ, ngang hàng với tiêu đề. */
+  .share-back { position: absolute; z-index: 2; top: 10px; left: 10px; }
+  /* Chừa chỗ cho nút để tiêu đề vẫn canh giữa thẻ, không bị đẩy lệch. */
+  .share-card .qr-title { min-height: 42px; display: flex; align-items: center; padding: 0 46px; }
   /* Nút pixel: viền dày, bóng đổ cứng, biểu tượng vẽ bằng ô vuông. */
   .pxbtn {
     width: 42px; height: 42px; flex: none; padding: 0; cursor: pointer;
@@ -550,8 +548,8 @@
 </div>
 
 <section class="onboard" id="sharePanel" hidden>
-  <button class="pxbtn share-back" id="shareBack" type="button" title="Quay lại" aria-label="Quay lại"><svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><g fill="currentColor"><rect x="0" y="4" width="1" height="1"/><rect x="1" y="3" width="1" height="3"/><rect x="2" y="2" width="1" height="5"/><rect x="3" y="4" width="6" height="1"/></g></svg></button>
   <div class="ob-card share-card">
+    <button class="pxbtn share-back" id="shareBack" type="button" title="Quay lại" aria-label="Quay lại"><svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><g fill="currentColor"><rect x="0" y="4" width="1" height="1"/><rect x="1" y="3" width="1" height="3"/><rect x="2" y="2" width="1" height="5"/><rect x="3" y="4" width="6" height="1"/></g></svg></button>
     <p class="qr-title">Ảnh thành tích</p>
     <canvas id="shareCanvas" width="960" height="540"></canvas>
     <div class="share-bar">
