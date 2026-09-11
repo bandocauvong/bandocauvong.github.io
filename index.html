@@ -1213,27 +1213,39 @@
   var AURA_COLS = [P.straw, P.orange, P.lemon, P.lime, P.aqua, P.grape];
 
   function drawAura(c, sp, cx, cy, t) {
-    var i, ang;
+    var i, ang, x, y;
     if (sp === "row") {
-      rect(c, cx - 10, cy - 10, 20, 2, P.sun);
-      rect(c, cx - 10, cy + 8, 20, 2, P.sun);
-      var ox = Math.floor((t * 34) % 8);
-      for (i = -12 + ox; i < 10; i += 8) rect(c, cx + i, cy - 1, 5, 2, P.cream);
+      rect(c, cx - 9, cy - 9, 18, 2, P.sun);
+      rect(c, cx - 9, cy + 7, 18, 2, P.sun);
+      var ox = Math.floor((t * 30) % 7);
+      for (i = -10 + ox; i < 9; i += 7) rect(c, cx + i, cy - 1, 4, 2, P.cream);
     } else if (sp === "col") {
-      rect(c, cx - 10, cy - 10, 2, 20, P.sun);
-      rect(c, cx + 8, cy - 10, 2, 20, P.sun);
-      var oy = Math.floor((t * 34) % 8);
-      for (i = -12 + oy; i < 10; i += 8) rect(c, cx - 1, cy + i, 2, 5, P.cream);
+      rect(c, cx - 9, cy - 9, 2, 18, P.sun);
+      rect(c, cx + 7, cy - 9, 2, 18, P.sun);
+      var oy = Math.floor((t * 30) % 7);
+      for (i = -10 + oy; i < 9; i += 7) rect(c, cx - 1, cy + i, 2, 4, P.cream);
     } else if (sp === "bomb") {
-      discOutline(c, cx, cy, 9 + Math.round(Math.sin(t * 7) * 1.4), P.red);
-      var on = (Math.floor(t * 8) % 2) === 0 ? P.sun : P.cream;
-      rect(c, cx - 10, cy - 10, 3, 3, on); rect(c, cx + 7, cy - 10, 3, 3, on);
-      rect(c, cx - 10, cy + 7, 3, 3, on); rect(c, cx + 7, cy + 7, 3, 3, on);
+      // A dashed ring turning like a fuse, with one bright spark running it.
+      // Reads better than the old blinking corners, and stays inside the cell.
+      var rr = 8 + (Math.sin(t * 5) > 0.4 ? 1 : 0);
+      for (i = 0; i < 16; i += 2) {
+        ang = (i / 16) * Math.PI * 2 + t * 1.7;
+        rect(c, Math.round(cx + Math.cos(ang) * rr), Math.round(cy + Math.sin(ang) * rr), 2, 2, P.red);
+      }
+      ang = t * 4.2;
+      x = Math.round(cx + Math.cos(ang) * rr);
+      y = Math.round(cy + Math.sin(ang) * rr);
+      rect(c, x, y, 2, 2, P.sun);
+      rect(c, x, y - 1, 1, 1, P.cream);
+      rect(c, x - 1, y, 1, 1, P.cream);
     } else if (sp === "color") {
-      for (i = 0; i < 20; i++) {
-        ang = (i / 20) * Math.PI * 2 + t * 2.2;
-        rect(c, Math.round(cx + Math.cos(ang) * 9), Math.round(cy + Math.sin(ang) * 9),
-             2, 2, AURA_COLS[(i + Math.floor(t * 7)) % 6]);
+      // Six solid colour arcs turning as one wheel — far calmer than cycling
+      // the colour of every dot, which just looked like static.
+      var pr = 8 + (Math.sin(t * 3) > 0 ? 1 : 0);
+      for (i = 0; i < 18; i++) {
+        ang = (i / 18) * Math.PI * 2 + t * 1.5;
+        rect(c, Math.round(cx + Math.cos(ang) * pr), Math.round(cy + Math.sin(ang) * pr),
+             2, 2, AURA_COLS[(i / 3) | 0]);
       }
     }
   }
@@ -1448,6 +1460,34 @@
      ========================================================= */
 
   var TILE_COL = [P.straw, P.lime, P.cola, P.aqua, P.aqua, P.pink];
+
+  /* Board sweets are drawn from a sprite cache at a slightly reduced size. Two
+     reasons: the badge needs clear space around the sweet instead of sitting on
+     top of it, and one drawImage per tile is far cheaper than re-running the
+     sprite code 63 times a frame. */
+  var TILE_SPRITE = null;
+  var TILE_DRAW = 20;
+
+  function tileSprites() {
+    if (TILE_SPRITE) return TILE_SPRITE;
+    TILE_SPRITE = [];
+    for (var i = 0; i < 6; i++) {
+      var o = document.createElement("canvas");
+      o.width = 28; o.height = 28;
+      var g = o.getContext("2d");
+      g.imageSmoothingEnabled = false;
+      // centred a touch high so the lollipop stick is not clipped by the buffer
+      drawCandy(g, KINDS[i], 14, 12, TILE_COL[i], 0);
+      TILE_SPRITE.push(o);
+    }
+    return TILE_SPRITE;
+  }
+
+  function drawTile(c, type, cx, cy) {
+    var sp = tileSprites()[type];
+    var w = TILE_DRAW;
+    c.drawImage(sp, Math.round(cx - w / 2), Math.round(cy - w / 2), w, w);
+  }
 
   /* Chance that a newly dropped tile carries a power. Read as frequency, not as
      rarity rank: line clears turn up most often, the 3x3 less often, and the
@@ -1884,12 +1924,11 @@
         if (!t) continue;
         var cx = BX + col2 * CE + CE / 2 + t.dx;
         var cy = BY + r * CE + CE / 2 + t.dy;
-        var lift = KINDS[t.t] === "lolly" ? 3 : 0;
         if (t.dying) {
-          if (t.pop > 0.15) drawCandy(c, KINDS[t.t], cx, cy - lift, TILE_COL[t.t], 0);
+          if (t.pop > 0.15) drawTile(c, t.t, cx, cy);
           discOutline(c, cx, cy, Math.round(3 + ((0.3 - t.pop) / 0.3) * 9), P.cream);
         } else {
-          drawCandy(c, KINDS[t.t], cx, cy - lift, TILE_COL[t.t], 0);
+          drawTile(c, t.t, cx, cy);
         }
         if (t.sp && !t.dying) drawAura(c, t.sp, cx, cy, this.glow);
       }
