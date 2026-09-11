@@ -2662,6 +2662,7 @@
     var gained = scores ? Math.round(scoreVal * (COEF[g.id] || 0)) : 0;
     var prevBest = profile.best[g.id] || 0;
     var record = scores && scoreVal > prevBest;
+    var reachedGoal = scoreVal >= g.goal;
 
     if (scores) {
       profile.total += gained;
@@ -2673,7 +2674,7 @@
       saveProfile();
     }
 
-    paintEndFace(win);
+    paintEndFace(reachedGoal);
     endScore.textContent = scoreVal;
     if (!scores) {
       endVerdict.textContent = "Trận 2 người — không tính điểm";
@@ -2950,15 +2951,25 @@
 
   /* ---------- loop ---------- */
 
+  /* Everything the frame does sits inside a guard, and the next frame is booked
+     in `finally`. Before this, one thrown error skipped the re-booking at the
+     bottom and the whole game froze on its last painted frame for good. */
+  var loopErrs = 0;
   function loop(now) {
-    if (!lastT) lastT = now;
-    var dt = Math.min((now - lastT) / 1000, 0.05);
-    lastT = now;
-    if (active && running) active.step(dt);
-    if (active) active.draw(ctx);
-    else ctx.drawImage(bgSun, 0, 0);
-    if (!boardEl.hidden && medalCells.length) drawMedals(now / 1000);
-    requestAnimationFrame(loop);
+    try {
+      if (!lastT) lastT = now;
+      var dt = Math.min((now - lastT) / 1000, 0.05);
+      lastT = now;
+      if (active && running) active.step(dt);
+      if (active) active.draw(ctx);
+      else ctx.drawImage(bgSun, 0, 0);
+      if (!boardEl.hidden && medalCells.length) drawMedals(now / 1000);
+    } catch (e) {
+      if (loopErrs++ < 5 && window.console) console.error("frame error:", e);
+      running = false;
+    } finally {
+      requestAnimationFrame(loop);
+    }
   }
   requestAnimationFrame(loop);
 
