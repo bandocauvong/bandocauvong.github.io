@@ -115,10 +115,11 @@
   /* leaderboard */
   .board-screen { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
   .board-screen[hidden] { display: none; }
-  .tabs { display: flex; gap: 6px; }
+  /* Five boards will not fit side by side on a phone, so the strip scrolls. */
+  .tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 3px; }
   .tab {
-    flex: 1; padding: 9px 6px; cursor: pointer;
-    font-family: var(--font-display); font-weight: 700; font-size: .85rem;
+    flex: 0 0 auto; padding: 8px 13px; cursor: pointer; white-space: nowrap;
+    font-family: var(--font-display); font-weight: 700; font-size: .82rem;
     background: rgba(255,248,231,.55); color: var(--ink-soft);
     border: 3px solid var(--ink);
   }
@@ -135,6 +136,7 @@
     font-size: .84rem;
   }
   .ranks li .no { font-family: var(--font-display); font-weight: 800; color: var(--ink-soft); text-align: center; }
+  .ranks li .no canvas { width: 22px; height: 24px; image-rendering: pixelated; display: block; margin: 0 auto; }
   .ranks li .who { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ranks li .pts { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--red); }
   .ranks li.top1 .no, .ranks li.top2 .no, .ranks li.top3 .no { color: var(--red); }
@@ -427,10 +429,7 @@
         <div class="playtitle">Bảng xếp hạng</div>
         <div></div>
       </div>
-      <div class="tabs">
-        <button class="tab on" id="tabTotal" type="button">Đua cày</button>
-        <button class="tab" id="tabBest" type="button">Kỷ lục từng game</button>
-      </div>
+      <div class="tabs" id="boardTabs"></div>
       <p class="demo-note">Dữ liệu mẫu dựng cho bản demo — không phải thành tích của người chơi thật.</p>
       <ul class="ranks" id="rankList"></ul>
       <div class="board-actions">
@@ -1037,6 +1036,38 @@
     rect(c, cx - 22, cy + 3, 6, 1, spd);
   }
 
+  // Podium hardware. Drawn rather than lettered so the top three read at a
+  // glance even before anyone parses the numbers.
+  function sTrophy(c, x, y) {
+    var lite = "#FFE79A", gold = "#FFC93C", deep = "#D99A0F", ink = "#2B1B14";
+    rect(c, x + 4, y + 22, 16, 3, ink);
+    rect(c, x + 6, y + 19, 12, 3, deep);
+    rect(c, x + 10, y + 14, 4, 5, deep);
+    rect(c, x + 2, y + 4, 4, 7, deep);
+    rect(c, x + 18, y + 4, 4, 7, deep);
+    rect(c, x + 3, y + 10, 3, 2, deep);
+    rect(c, x + 18, y + 10, 3, 2, deep);
+    rect(c, x + 5, y + 3, 14, 11, gold);
+    rect(c, x + 5, y + 14, 14, 2, deep);
+    rect(c, x + 7, y + 5, 3, 7, lite);
+    rect(c, x + 4, y + 2, 16, 2, lite);
+    rect(c, x + 4, y + 1, 16, 1, ink);
+  }
+
+  function sMedal(c, x, y, deep, mid, lite) {
+    rect(c, x + 5, y + 1, 4, 9, "#D6353B");
+    rect(c, x + 15, y + 1, 4, 9, "#2F6FD0");
+    rect(c, x + 5, y + 1, 4, 2, "#F05A60");
+    rect(c, x + 15, y + 1, 4, 2, "#4E8CE8");
+    disc(c, x + 12, y + 16, 8, mid);
+    discOutline(c, x + 12, y + 16, 8, "#2B1B14");
+    disc(c, x + 12, y + 16, 5, deep);
+    rect(c, x + 11, y + 12, 2, 8, lite);
+    rect(c, x + 8, y + 15, 8, 2, lite);
+    rect(c, x + 9, y + 13, 2, 2, lite);
+    rect(c, x + 14, y + 13, 2, 2, lite);
+  }
+
   var CANDY = {
     lolly: sLolly, bear: sBear, cola: function (c, x, y) { sCola(c, x, y); },
     belt: function (c, x, y) { sBelt(c, x, y); }, tube: sTube, mint: sMint
@@ -1213,6 +1244,31 @@
     ["MeoConCanTho", 3760], ["haha_lolli", 3495], ["Nguyen_Vy", 3210],
     ["ChupsFan01", 2980], ["bé_su_kem", 2745], ["DatDepTrai", 2510], ["mun_mun", 2305]
   ];
+
+  /* One ladder per game. Pong cannot rank on best score — every win caps at 5
+     goals, so the whole table would tie; it ranks on wins against the bot. */
+  var BOARDS = {
+    match: { label: "Ghép Kẹo", unit: "điểm", key: "match", demo: [
+      ["kẹo_mút_hà_nội", 12400], ["mun_mun", 10850], ["BinBon2k", 9720],
+      ["bé_su_kem", 8540], ["ChupsFan01", 7960], ["MeoConCanTho", 7210],
+      ["Nguyen_Vy", 6480], ["haha_lolli", 5930], ["DatDepTrai", 5240], ["TuanAnh_98", 4680]
+    ] },
+    runner: { label: "Chạy Kẹo", unit: "mét", key: "runner", demo: [
+      ["DatDepTrai", 2480], ["BinBon2k", 2210], ["haha_lolli", 1975],
+      ["TuanAnh_98", 1820], ["mun_mun", 1640], ["kẹo_mút_hà_nội", 1495],
+      ["bé_su_kem", 1330], ["MeoConCanTho", 1185], ["Nguyen_Vy", 1040], ["ChupsFan01", 920]
+    ] },
+    flappy: { label: "Landmark 81", unit: "tầng", key: "flappy", demo: [
+      ["MeoConCanTho", 64], ["ChupsFan01", 57], ["Nguyen_Vy", 51],
+      ["BinBon2k", 46], ["DatDepTrai", 41], ["haha_lolli", 37],
+      ["mun_mun", 33], ["kẹo_mút_hà_nội", 29], ["TuanAnh_98", 25], ["bé_su_kem", 22]
+    ] },
+    pong: { label: "Đối Kẹo", unit: "trận thắng", key: "pongWins", demo: [
+      ["haha_lolli", 38], ["TuanAnh_98", 33], ["bé_su_kem", 29],
+      ["Nguyen_Vy", 26], ["kẹo_mút_hà_nội", 23], ["DatDepTrai", 20],
+      ["BinBon2k", 17], ["MeoConCanTho", 14], ["mun_mun", 12], ["ChupsFan01", 10]
+    ] }
+  };
 
   var active = null, running = false, lastT = 0;
 
@@ -2125,6 +2181,10 @@
     if (scores) {
       profile.total += gained;
       if (record) profile.best[g.id] = scoreVal;
+      // Pong ranks on wins, not on goals, so count them separately.
+      if (g.id === "pong" && scoreVal >= g.goal) {
+        profile.best.pongWins = (profile.best.pongWins || 0) + 1;
+      }
       saveProfile();
     }
 
@@ -2159,13 +2219,28 @@
     hubEl.hidden = true;
     playEl.hidden = true;
     boardEl.hidden = false;
+    buildTabs();
     paintBoard();
   }
+
+  var SILVER = ["#8E969E", "#CBD2D8", "#F1F5F8"];
+  var BRONZE = ["#8A4E20", "#C87A3A", "#EBB273"];
 
   function row(no, who, pts, cls) {
     var li = document.createElement("li");
     if (cls) li.className = cls;
-    var a = document.createElement("span"); a.className = "no"; a.textContent = no;
+    var a = document.createElement("span"); a.className = "no";
+    if (no === 1 || no === 2 || no === 3) {
+      var cv = document.createElement("canvas");
+      cv.width = 24; cv.height = 26;
+      var cc = cv.getContext("2d");
+      cc.imageSmoothingEnabled = false;
+      if (no === 1) sTrophy(cc, 0, 0);
+      else sMedal(cc, 0, 0, (no === 2 ? SILVER : BRONZE)[0], (no === 2 ? SILVER : BRONZE)[1], (no === 2 ? SILVER : BRONZE)[2]);
+      a.appendChild(cv);
+    } else {
+      a.textContent = no;
+    }
     var b = document.createElement("span"); b.className = "who"; b.textContent = who;
     var c = document.createElement("span"); c.className = "pts"; c.textContent = pts;
     li.appendChild(a); li.appendChild(b); li.appendChild(c);
@@ -2175,40 +2250,48 @@
   function paintBoard() {
     rankListEl.innerHTML = "";
     var me = profile.nick || "Bạn";
-    if (boardTab === "total") {
-      var mine = rankOf(profile.total);
-      var placed = false;
-      DEMO_RANKS.forEach(function (r, i) {
-        if (mine === i + 1 && !placed) {
-          rankListEl.appendChild(row(i + 1, me + " (bạn)", profile.total, "you"));
-          placed = true;
-        }
-        var n = placed ? i + 2 : i + 1;
-        if (n <= 10) rankListEl.appendChild(row(n, r[0], r[1], n <= 3 ? "top" + n : ""));
+    var cfg = boardTab === "total" ? null : BOARDS[boardTab];
+    var demo = cfg ? cfg.demo : DEMO_RANKS;
+    var mine = cfg ? (profile.best[cfg.key] || 0) : profile.total;
+    var suffix = cfg ? (" " + cfg.unit) : "";
+
+    var myRank = 0;
+    for (var i = 0; i < demo.length; i++) { if (mine > demo[i][1]) { myRank = i + 1; break; } }
+
+    var placed = false;
+    demo.forEach(function (r, idx) {
+      if (myRank === idx + 1 && !placed) {
+        rankListEl.appendChild(row(idx + 1, me + " (bạn)", mine + suffix, "you"));
+        placed = true;
+      }
+      var n = placed ? idx + 2 : idx + 1;
+      if (n <= 10) rankListEl.appendChild(row(n, r[0], r[1] + suffix, ""));
+    });
+    if (!placed) rankListEl.appendChild(row("—", me + " (bạn)", mine + suffix, "you"));
+  }
+
+  function buildTabs() {
+    var strip = document.getElementById("boardTabs");
+    strip.innerHTML = "";
+    var defs = [{ id: "total", label: "Đua cày" }];
+    GAMES.forEach(function (g) { if (BOARDS[g.id]) defs.push({ id: g.id, label: BOARDS[g.id].label }); });
+    defs.forEach(function (d) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "tab" + (d.id === boardTab ? " on" : "");
+      b.textContent = d.label;
+      b.addEventListener("click", function () {
+        boardTab = d.id;
+        Array.prototype.forEach.call(strip.children, function (el) { el.classList.remove("on"); });
+        b.classList.add("on");
+        paintBoard();
       });
-      if (!placed) rankListEl.appendChild(row("—", me + " (bạn)", profile.total, "you"));
-    } else {
-      GAMES.forEach(function (g, i) {
-        var best = profile.best[g.id] || 0;
-        rankListEl.appendChild(row(i + 1, g.name + " · kỷ lục của bạn", best + " " + g.unit.toLowerCase(), best > 0 ? "you" : ""));
-      });
-    }
+      strip.appendChild(b);
+    });
   }
 
   document.getElementById("openBoard").addEventListener("click", openBoard);
   document.getElementById("boardBack").addEventListener("click", backToHub);
-  document.getElementById("tabTotal").addEventListener("click", function () {
-    boardTab = "total";
-    this.classList.add("on");
-    document.getElementById("tabBest").classList.remove("on");
-    paintBoard();
-  });
-  document.getElementById("tabBest").addEventListener("click", function () {
-    boardTab = "best";
-    this.classList.add("on");
-    document.getElementById("tabTotal").classList.remove("on");
-    paintBoard();
-  });
 
   nickInput.value = profile.nick;
   nickInput.addEventListener("input", function () {
