@@ -207,7 +207,7 @@
 
   /* ---------- Hub ---------- */
 
-  .hub { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; transform-origin: top center; }
+  .hub { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; transform-origin: top center; transform: scale(var(--fit, 1)); }
   /* The grid takes the leftover height, but the cards must not stretch into it
      or they turn into tall boxes with the text stranded at the top. */
   .hub .grid { flex: 1; min-height: 0; grid-auto-rows: min-content; align-content: center; }
@@ -352,7 +352,16 @@
     padding: 12px; overflow: hidden;
     background: rgba(43,27,20,.72);
   }
-  .board { transform-origin: center center; }
+  /* Hai thứ cùng cần transform: phép thu cho vừa màn hình, và phép trượt khi
+     bảng hiện ra. Tách thành hai biến để chúng cộng hưởng thay vì ghi đè. */
+  .board {
+    transform-origin: center center;
+    transform: translateY(var(--slide, 0px)) scale(var(--fit, 1));
+  }
+  .ov.sliding .board { transition: transform 1s cubic-bezier(.16,.84,.3,1); }
+  .ov.closing .board { transition: transform .35s cubic-bezier(.5,0,.75,0); }
+  .ov.veiled { background: rgba(43,27,20,0); }
+  .ov.sliding, .ov.closing { transition: background-color .45s linear; }
   .ov[hidden] { display: none; }
 
   /* The instruction board: a candy-wrapper label pinned over the screen. */
@@ -2669,8 +2678,10 @@
     ovCtl.textContent = g.control;
     ovGoal.textContent = "MỤC TIÊU: " + g.goalText.toUpperCase();
     buildModes(g);
+    if (endTimer) { clearTimeout(endTimer); endTimer = null; }
     ovStart.hidden = false;
     ovEnd.hidden = true;
+    resetEndBoard();
     g.reset();
     fitAll();
     requestAnimationFrame(fitAll);
@@ -2705,6 +2716,7 @@
     statSub.textContent = active.subInit || active.unit;
     ovStart.hidden = true;
     ovEnd.hidden = true;
+    resetEndBoard();
     running = true;
   }
 
@@ -2741,9 +2753,47 @@
       endNote.textContent = "Tổng điểm của bạn: " + profile.total +
         (record ? "" : " · kỷ lục " + g.unit.toLowerCase() + ": " + prevBest);
     }
+    if (endTimer) clearTimeout(endTimer);
+    endTimer = setTimeout(function () { endTimer = null; showEndBoard(); }, 1000);
+  }
+
+  /* Bảng kết quả chờ một nhịp rồi trượt lên, để người chơi kịp nhìn thấy mình
+     vừa chết chứ không bị che ngay lập tức. */
+  var endTimer = null;
+
+  function endBoardEl() { return ovEnd.querySelector(".board"); }
+
+  function resetEndBoard() {
+    var b = endBoardEl();
+    ovEnd.classList.remove("sliding", "closing", "veiled");
+    if (b) { b.style.transition = "none"; b.style.setProperty("--slide", "0px"); void b.offsetHeight; b.style.transition = ""; }
+  }
+
+  function showEndBoard() {
+    var b = endBoardEl();
     ovEnd.hidden = false;
+    ovEnd.classList.add("veiled");
+    b.style.transition = "none";
+    b.style.setProperty("--slide", "170%");
     fitAll();
-    requestAnimationFrame(fitAll);
+    void b.offsetHeight;              // chốt trạng thái đầu trước khi bật chuyển động
+    b.style.transition = "";
+    ovEnd.classList.add("sliding");
+    ovEnd.classList.remove("veiled");
+    b.style.setProperty("--slide", "0px");
+    setTimeout(function () { ovEnd.classList.remove("sliding"); }, 1050);
+  }
+
+  function hideEndBoard(then) {
+    var b = endBoardEl();
+    ovEnd.classList.remove("sliding");
+    ovEnd.classList.add("closing", "veiled");
+    b.style.setProperty("--slide", "170%");
+    setTimeout(function () {
+      ovEnd.hidden = true;
+      resetEndBoard();
+      if (then) then();
+    }, 360);
   }
 
   function paintEndFace(win) {
@@ -2758,6 +2808,9 @@
   }
 
   function backToHub() {
+    if (endTimer) { clearTimeout(endTimer); endTimer = null; }
+    ovEnd.hidden = true;
+    resetEndBoard();
     running = false;
     active = null;
     playEl.hidden = true;
@@ -2871,11 +2924,11 @@
 
   function fitToBox(el, box, floor) {
     if (!el || !box) return;
-    el.style.transform = "";
+    el.style.setProperty("--fit", "1");
     var avail = box.clientHeight;
     var need = el.scrollHeight;
     if (avail > 0 && need > avail + 1) {
-      el.style.transform = "scale(" + Math.max(floor || 0.55, avail / need).toFixed(4) + ")";
+      el.style.setProperty("--fit", Math.max(floor || 0.55, avail / need).toFixed(4));
     }
   }
 
@@ -2972,7 +3025,8 @@
   if (!profile.nick) showOnboard();
 
   document.getElementById("endAgain").addEventListener("click", function () {
-    startRun(active ? active.mode : null);
+    var mode = active ? active.mode : null;
+    hideEndBoard(function () { startRun(mode); });   // trượt xuống rồi mới chơi lại
   });
   document.getElementById("endBack").addEventListener("click", backToHub);
   document.getElementById("backBtn").addEventListener("click", backToHub);
