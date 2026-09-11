@@ -903,6 +903,57 @@
     }
   }
 
+  // Pipe palette lifted from the art direction: hot pink shaft, light highlight
+  // band down the left, shaded right, deep magenta outline.
+  var PIPE = { body: "#E8308F", lite: "#FF85C6", dark: "#B81570", edge: "#8C0E52" };
+
+  // The Tet goat mascot in flight. Placeholder until the real pixel sprite
+  // arrives — every shape carries a dark outline because the backdrop is white
+  // and the cream fur vanishes without one.
+  function sGoat(c, cx, cy, flap) {
+    var dress = "#F58FBE", dressDk = "#D9629B", skirt = "#2E3F6E";
+    var fur = "#FFF6F3", furSh = "#EFD3D9", line = "#4A2B33";
+    var horn = "#7A4A2B", hornLt = "#A9703F", ear = "#F2A2BB";
+    var red = "#D42A2A", gold = "#F2C14E", spd = "#FFB8D8";
+    var t = flap ? -1 : 0;
+
+    // trailing ao dai
+    rect(c, cx - 14, cy - 2 + t, 13, 10, line);
+    rect(c, cx - 13, cy - 1 + t, 11, 8, dress);
+    rect(c, cx - 13, cy + 4 + t, 8, 3, skirt);
+    rect(c, cx - 15, cy + 1 + t, 2, 5, dressDk);
+
+    // head
+    rect(c, cx - 4, cy - 8 + t, 13, 12, line);
+    rect(c, cx - 3, cy - 7 + t, 11, 10, fur);
+    rect(c, cx - 3, cy + 1 + t, 11, 2, furSh);
+
+    // ear
+    rect(c, cx - 6, cy - 3 + t, 3, 6, line);
+    rect(c, cx - 6, cy - 2 + t, 2, 4, ear);
+
+    // horn curl
+    rect(c, cx - 2, cy - 11 + t, 8, 4, line);
+    rect(c, cx - 1, cy - 10 + t, 5, 2, horn);
+    rect(c, cx + 4, cy - 9 + t, 2, 3, horn);
+    rect(c, cx + 1, cy - 10 + t, 2, 1, hornLt);
+
+    // face
+    rect(c, cx + 1, cy - 4 + t, 2, 3, line);
+    rect(c, cx + 4, cy - 1 + t, 3, 2, "#FFA8C4");
+    rect(c, cx + 6, cy - 3 + t, 3, 4, fur);
+    rect(c, cx + 6, cy - 4 + t, 3, 1, line);
+
+    // red envelope held out front
+    rect(c, cx + 7, cy + 1 + t, 8, 12, line);
+    rect(c, cx + 8, cy + 2 + t, 6, 10, red);
+    rect(c, cx + 10, cy + 5 + t, 2, 4, gold);
+
+    // speed lines
+    rect(c, cx - 20, cy - 3, 5, 1, spd);
+    rect(c, cx - 22, cy + 3, 6, 1, spd);
+  }
+
   var CANDY = {
     lolly: sLolly, bear: sBear, cola: function (c, x, y) { sCola(c, x, y); },
     belt: function (c, x, y) { sBelt(c, x, y); }, tube: sTube, mint: sMint
@@ -968,6 +1019,27 @@
       rect(g, px, py, 22, 6, P.white);
       rect(g, px + 5, py - 4, 12, 5, P.white);
       rect(g, px + 3, py + 6, 16, 2, "rgba(220,240,255,.9)");
+    }
+    return o.cv;
+  })();
+
+  // Flappy backdrop: near-white like the reference, with soft pink puffs so the
+  // field is not a blank sheet, and Landmark 81 kept as a pale distant marker.
+  var bgFlap = (function () {
+    var o = offscreen(BW, BH), g = o.g;
+    rect(g, 0, 0, BW, BH, "#FFFFFF");
+    var tx = BW - 46;
+    rect(g, tx, 66, 26, BH - 66, "#FDEAF3");
+    rect(g, tx + 9, 44, 9, 22, "#FDEAF3");
+    for (var r = 0; r < 15; r++) for (var k = 0; k < 3; k++) {
+      if ((r + k) % 3 === 0) rect(g, tx + 4 + k * 7, 76 + r * 12, 3, 4, "#F9DCEB");
+    }
+    var puffs = [[12, 36], [98, 22], [50, 90], [122, 126], [24, 158], [100, 206], [42, 244]];
+    for (var i = 0; i < puffs.length; i++) {
+      var x = puffs[i][0], y = puffs[i][1];
+      rect(g, x, y, 21, 5, "#FFE9F4");
+      rect(g, x + 5, y - 4, 11, 5, "#FFE9F4");
+      rect(g, x + 2, y + 5, 15, 2, "#FDDCEC");
     }
     return o.cv;
   })();
@@ -1660,18 +1732,18 @@
     y: 120, vy: 0, score: 0, pipes: [], t: 0, dead: false, started: false,
 
     legend: [
-      { icon: function (g) { rect(g, 4, 0, 12, 12, P.cream); rect(g, 4, 10, 12, 3, P.red); rect(g, 4, 24, 12, 12, P.cream); rect(g, 4, 24, 12, 3, P.red); sLolly(g, 26, 18, P.straw, 0); },
-        text: "Lách qua khe giữa hai tầng tháp" },
-      { icon: function (g) { sLolly(g, 18, 14, P.straw, 0); rect(g, 16, 26, 4, 2, P.ink); rect(g, 14, 29, 8, 2, P.ink); },
+      { icon: function (g) { rect(g, 2, 0, 11, 11, PIPE.body); rect(g, 1, 9, 13, 3, PIPE.edge);
+          rect(g, 2, 25, 11, 11, PIPE.body); rect(g, 1, 24, 13, 3, PIPE.edge); sGoat(g, 24, 18, 0); },
+        text: "Lách qua khe giữa hai ống" },
+      { icon: function (g) { sGoat(g, 20, 13, 1); rect(g, 17, 26, 5, 2, P.ink); rect(g, 15, 29, 9, 2, P.ink); },
         text: "Chạm liên tục để giữ độ cao" }
     ],
 
     icon: function (c) {
-      c.drawImage(bgSky, 0, 0, 26, 26, 0, 0, 26, 26);
-      rect(c, 9, 3, 9, 23, P.cream);
-      rect(c, 9, 3, 9, 3, P.red);
-      for (var r = 0; r < 5; r++) for (var k = 0; k < 2; k++) rect(c, 11 + k * 4, 8 + r * 4, 2, 2, P.aqua);
-      sLolly(c, 4, 13, P.straw, 0);
+      rect(c, 0, 0, 26, 26, "#FFFFFF");
+      rect(c, 17, 0, 9, 9, PIPE.body); rect(c, 16, 7, 10, 3, PIPE.edge);
+      rect(c, 17, 19, 9, 7, PIPE.body); rect(c, 16, 17, 10, 3, PIPE.edge);
+      sGoat(c, 9, 13, 0);
     },
 
     reset: function () {
@@ -1712,31 +1784,27 @@
       if (this.y > BH - 10) { this.dead = true; finishRun(this.score); return; }
     },
 
+    // Classic Flappy pipe: a shaft plus a wider lip at the gap end.
     tower: function (c, x, y, h, capAtBottom) {
       if (h <= 0) return;
-      rect(c, x, y, 22, h, P.cream);
-      rect(c, x, y, 2, h, "#D8C6A8");
-      rect(c, x + 20, y, 2, h, "#D8C6A8");
-      for (var r = 0; r < Math.floor(h / 9); r++) {
-        for (var k = 0; k < 3; k++) {
-          var on = ((r * 3 + k + (x | 0)) % 4) !== 0;
-          rect(c, x + 4 + k * 5, y + 5 + r * 9, 3, 4, on ? P.aqua : "#C9B99C");
-        }
-      }
-      rect(c, x - 2, capAtBottom ? y + h - 7 : y, 26, 7, P.red);
-      rect(c, x - 2, capAtBottom ? y + h - 7 : y, 26, 2, P.redLt);
+      rect(c, x, y, 22, h, PIPE.body);
+      rect(c, x + 3, y, 4, h, PIPE.lite);
+      rect(c, x + 16, y, 4, h, PIPE.dark);
+      rect(c, x, y, 2, h, PIPE.edge);
+      rect(c, x + 20, y, 2, h, PIPE.edge);
+
+      var ly = capAtBottom ? y + h - 10 : y;
+      rect(c, x - 3, ly, 28, 10, PIPE.body);
+      rect(c, x, ly, 4, 10, PIPE.lite);
+      rect(c, x + 19, ly, 4, 10, PIPE.dark);
+      rect(c, x - 3, ly, 28, 2, PIPE.edge);
+      rect(c, x - 3, ly + 8, 28, 2, PIPE.edge);
+      rect(c, x - 3, ly, 2, 10, PIPE.edge);
+      rect(c, x + 23, ly, 2, 10, PIPE.edge);
     },
 
     draw: function (c) {
-      c.drawImage(bgSky, 0, 0);
-
-      // Landmark 81 standing behind the play field
-      var tw = 26, tx = BW - 44;
-      rect(c, tx, 62, tw, BH - 62, "rgba(30,90,130,.42)");
-      rect(c, tx + 8, 40, 10, 22, "rgba(30,90,130,.42)");
-      for (var r = 0; r < 16; r++) for (var k = 0; k < 3; k++) {
-        if ((r + k) % 3 === 0) rect(c, tx + 4 + k * 7, 72 + r * 12, 3, 4, "rgba(255,255,255,.42)");
-      }
+      c.drawImage(bgFlap, 0, 0);
 
       for (var i = 0; i < this.pipes.length; i++) {
         var p = this.pipes[i];
@@ -1744,13 +1812,7 @@
         this.tower(c, p.x, p.top + p.gap, BH - (p.top + p.gap), false);
       }
 
-      var by = this.y | 0;
-      var tilt = Math.max(-3, Math.min(4, Math.round(this.vy / 40)));
-      rect(c, 44, by + 8 + tilt, 4, 8, "#F2E3C4");
-      disc(c, 46, by, 8, P.straw);
-      discOutline(c, 46, by, 8, P.ink);
-      swirl(c, 46, by, 8, P.cream, this.t * 3);
-      rect(c, 42, by - 4, 2, 2, P.white);
+      sGoat(c, 46, this.y | 0, this.vy < -20);
     }
   };
 
