@@ -551,7 +551,7 @@
   <div class="ob-card share-card">
     <button class="pxbtn share-back" id="shareBack" type="button" title="Quay lại" aria-label="Quay lại"><svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><g fill="currentColor"><rect x="0" y="4" width="1" height="1"/><rect x="1" y="3" width="1" height="3"/><rect x="2" y="2" width="1" height="5"/><rect x="3" y="4" width="6" height="1"/></g></svg></button>
     <p class="qr-title">Ảnh thành tích</p>
-    <canvas id="shareCanvas" width="960" height="540"></canvas>
+    <canvas id="shareCanvas" width="1920" height="1080"></canvas>
     <div class="share-bar">
       <div class="share-acts">
         <button class="pxbtn" id="shareFull" type="button" title="Xem to" aria-label="Xem ảnh to toàn màn hình"><svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><g fill="currentColor"><rect x="0" y="0" width="4" height="1"/><rect x="0" y="0" width="1" height="4"/><rect x="5" y="0" width="4" height="1"/><rect x="8" y="0" width="1" height="4"/><rect x="0" y="8" width="4" height="1"/><rect x="0" y="5" width="1" height="4"/><rect x="5" y="8" width="4" height="1"/><rect x="8" y="5" width="1" height="4"/></g></svg></button>
@@ -3204,6 +3204,31 @@
     return sceneCache;
   }
 
+  /* Logo cầu vồng: vẽ một lần ra canvas 64×64 rồi dùng chung cho màn hình
+     đầu và cho thẻ khoe. Blit theo bội số nguyên nên không bao giờ bị mờ. */
+  var markCache = null;
+  function markCanvas() {
+    if (markCache) return markCache;
+    markCache = document.createElement("canvas");
+    markCache.width = 64; markCache.height = 64;
+    var g = markCache.getContext("2d");
+    g.imageSmoothingEnabled = false;
+    var arc = [P.straw, P.orange, P.lemon, P.lime, P.aqua, P.grape];
+    function half(cx, cy, r, col) {
+      g.fillStyle = col;
+      for (var dy = -r; dy <= 0; dy++) {
+        var dx = Math.floor(Math.sqrt(r * r - dy * dy));
+        g.fillRect((cx - dx) | 0, (cy + dy) | 0, (dx * 2 + 1) | 0, 1);
+      }
+    }
+    for (var i = 0; i < 6; i++) half(32, 47, 30 - i * 4, arc[i]);
+    for (var dy2 = -6; dy2 <= 0; dy2++) {
+      var dx2 = Math.floor(Math.sqrt(36 - dy2 * dy2));
+      g.clearRect(32 - dx2, 47 + dy2, dx2 * 2 + 1, 1);
+    }
+    return markCache;
+  }
+
   // Thu cỡ chữ cho tới khi lọt bề ngang cho trước, để biệt danh dài không tràn.
   function fitFont(c, txt, weight, size, family, maxW) {
     while (size > 14) {
@@ -3214,10 +3239,18 @@
     return size;
   }
 
+  /* Thẻ xuất ở 1920×1080 nhưng mọi toạ độ bên dưới vẫn tính theo lưới 960×540:
+     đặt sẵn phép nhân đôi lên ngữ cảnh là xong. Lý do phải lên gấp đôi:
+     xem toàn màn hình trên iPhone cần ~2000 điểm ảnh ngang, 960 bị phóng lên
+     hơn gấp đôi nên chữ nhoè. Mọi tỉ lệ vẫn là bội số nguyên: cảnh nền
+     480→1920 (×4), nhân vật 44×48 → ×10, logo 64 → ×2. */
+  var CARD_SC = 2;
+
   function buildShareCard() {
     var cv = document.getElementById("shareCanvas");
     var c = cv.getContext("2d");
 
+    c.setTransform(CARD_SC, 0, 0, CARD_SC, 0, 0);
     c.imageSmoothingEnabled = false;
     c.clearRect(0, 0, 960, 540);
     c.drawImage(candyScene(), 0, 0, 480, 270, 0, 0, 960, 540);
@@ -3244,19 +3277,31 @@
       c.drawImage(HERO, H_CHEER * HERO_W, 0, HERO_W, HERO_H, hx, hy, hw, hh);
     }
 
+    // Logo cầu vồng đứng trước chữ ký. Vẽ lúc còn tắt làm mượt để giữ nét pixel.
+    c.shadowColor = "rgba(43,27,20,.38)";
+    c.shadowOffsetX = 2; c.shadowOffsetY = 3; c.shadowBlur = 0;
+    c.drawImage(markCanvas(), 34, 1, 64, 64);
+    c.shadowColor = "transparent";
+    c.shadowOffsetX = 0; c.shadowOffsetY = 0;
+
     c.imageSmoothingEnabled = true;
     c.textBaseline = "alphabetic";
     c.textAlign = "left";
 
-    // chữ ký trò chơi ở góc trên, có bóng vì nền trời sáng
+    /* Chữ ký trò chơi viền đậm chứ không phải bóng đổ lệch. Đo được: trời kẹo
+       có mây trắng trôi qua sau chữ, chữ trắng đặt lên mây cho tương phản 1.0
+       (mất hẳn chữ), chữ vàng 1.46 — chuẩn là 4.5. Viền làm nền tiếp giáp cho
+       mọi nét chữ nên không còn phụ thuộc cái gì nằm phía sau. */
     c.font = "800 26px \"Baloo 2\", sans-serif";
     var lead = c.measureText("BẢN ĐỒ ").width;
-    c.fillStyle = "rgba(43,27,20,.4)";
-    c.fillText("BẢN ĐỒ CẦU VỒNG", 42, 51);
+    c.lineJoin = "round";
+    c.lineWidth = 6;
+    c.strokeStyle = "rgba(43,27,20,.92)";
+    c.strokeText("BẢN ĐỒ CẦU VỒNG", 106, 48);
     c.fillStyle = P.white;
-    c.fillText("BẢN ĐỒ ", 40, 48);
+    c.fillText("BẢN ĐỒ ", 106, 48);
     c.fillStyle = P.sun;
-    c.fillText("CẦU VỒNG", 40 + lead, 48);
+    c.fillText("CẦU VỒNG", 106 + lead, 48);
 
     var nick = profile.nick || "Bạn";
     var rank = rankOf(profile.total);
@@ -3411,19 +3456,7 @@
   (function () {
     var c = document.getElementById("obMark").getContext("2d");
     c.imageSmoothingEnabled = false;
-    var arc = [P.straw, P.orange, P.lemon, P.lime, P.aqua, P.grape];
-    function half(cx, cy, r, col) {
-      c.fillStyle = col;
-      for (var dy = -r; dy <= 0; dy++) {
-        var dx = Math.floor(Math.sqrt(r * r - dy * dy));
-        c.fillRect((cx - dx) | 0, (cy + dy) | 0, (dx * 2 + 1) | 0, 1);
-      }
-    }
-    for (var i = 0; i < 6; i++) half(32, 47, 30 - i * 4, arc[i]);
-    for (var dy = -6; dy <= 0; dy++) {
-      var dx = Math.floor(Math.sqrt(36 - dy * dy));
-      c.clearRect(32 - dx, 47 + dy, dx * 2 + 1, 1);
-    }
+    c.drawImage(markCanvas(), 0, 0);
   })();
 
   if (!profile.nick) showOnboard();
