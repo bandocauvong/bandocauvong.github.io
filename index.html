@@ -152,6 +152,13 @@
   }
   .ob-card h1 em { font-style: normal; display: block; color: var(--ink); }
   .qr-title { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; color: var(--ink); }
+  /* Thẻ khoe vẽ ở 960x540 rồi để trình duyệt thu nhỏ mượt. Phải thắng luật
+     .ob-card canvas vốn ép mọi canvas về 64px và bật pixelated. */
+  #shareCanvas {
+    width: 100%; height: auto; display: block;
+    image-rendering: auto;
+    border: 3px solid var(--ink); box-shadow: 0 4px 0 rgba(43,27,20,.3);
+  }
   .ob-card .lede { margin: 0; font-size: .85rem; line-height: 1.5; color: var(--ink-soft); max-width: 28ch; }
   .ob-card label {
     align-self: stretch; text-align: left; margin-top: 4px;
@@ -479,6 +486,16 @@
   <p>Xoay dọc điện thoại để chơi</p>
 </div>
 
+<section class="onboard" id="sharePanel" hidden>
+  <div class="ob-card">
+    <p class="qr-title">Ảnh thành tích</p>
+    <canvas id="shareCanvas" width="960" height="540"></canvas>
+    <p class="lede" id="shareHint">Nhấn giữ vào ảnh để lưu về máy.</p>
+    <button class="btn" id="shareSend" type="button">Chia sẻ ảnh</button>
+    <button class="btn ghost" id="shareClose" type="button">Đóng</button>
+  </div>
+</section>
+
 <section class="onboard" id="qrPanel" hidden>
   <div class="ob-card">
     <p class="kicker">Rủ bạn cùng chơi</p>
@@ -591,7 +608,10 @@
             <p class="verdict" id="endVerdict">—</p>
             <p class="note" id="endNote">—</p>
             <button class="btn" id="endAgain" type="button">Chơi lại</button>
-            <button class="btn ghost" id="endBack" type="button">Về nhiệm vụ</button>
+            <div class="board-actions">
+              <button class="btn ghost" id="endShare" type="button">Tạo ảnh khoe</button>
+              <button class="btn ghost" id="endBack" type="button">Về nhiệm vụ</button>
+            </div>
           </div>
         </div>
       </div>
@@ -2991,6 +3011,266 @@
   });
   obNick.addEventListener("input", function () { if (obErr.textContent) obErr.textContent = ""; });
   document.getElementById("editNick").addEventListener("click", showOnboard);
+  /* ---------- ảnh khoe thành tích ----------
+
+     Cảnh nền vẽ ở 480x270 rồi phóng đúng gấp đôi lên 960x540, CHỈ SAU ĐÓ mới
+     viết chữ. Nếu viết chữ ở tầng pixel rồi mới phóng thì dấu tiếng Việt nát. */
+
+  function paintCandyScene(c, W, H) {
+    var i, x, y, k, q;
+    var HOR = 150;                       // đường chân trời, chừa nửa dưới cho chữ
+
+    // trời chuyển màu theo từng dải, không pha mềm
+    var sky = ["#8FDFFF", "#7CD6FC", "#69CDF8", "#57C4F4"];
+    for (i = 0; i < sky.length; i++) rect(c, 0, i * 20, W, 20, sky[i]);
+    rect(c, 0, 80, W, HOR - 80, "#57C4F4");
+
+    // cầu vồng vắt qua trời
+    var arc = [P.straw, P.orange, P.lemon, P.lime, P.aqua, P.grape];
+    for (i = 0; i < 6; i++) {
+      var rr = 100 - i * 6;
+      for (var ang = 186; ang <= 354; ang += 1.3) {
+        var rad = ang * Math.PI / 180;
+        rect(c, 360 + Math.cos(rad) * rr, 132 + Math.sin(rad) * rr, 6, 6, arc[i]);
+      }
+    }
+
+    // mây khối
+    var puffs = [[22, 28], [136, 16], [232, 36], [316, 22], [414, 52], [66, 58]];
+    for (i = 0; i < puffs.length; i++) {
+      x = puffs[i][0]; y = puffs[i][1];
+      rect(c, x, y, 42, 9, P.white);
+      rect(c, x + 10, y - 7, 23, 9, P.white);
+      rect(c, x + 5, y + 9, 32, 4, "#D6EBFA");
+    }
+
+    // núi tuyết phía xa
+    function peak(px, base, w, h, col, snow) {
+      for (q = 0; q < h; q++) {
+        var half = Math.round((q / h) * w / 2);
+        rect(c, px - half, base - h + q, half * 2 + 1, 1, q < h * 0.3 ? snow : col);
+      }
+    }
+    peak(84, HOR, 140, 66, "#9EC8EC", "#F2FAFF");
+    peak(196, HOR, 186, 92, "#89B9E3", "#EAF6FF");
+    peak(404, HOR, 160, 74, "#A6CDEE", "#F2FAFF");
+
+    // ---- lâu đài kẹo ----
+    function tower(tx, base, w, h) {
+      rect(c, tx - w / 2, base - h, w, h, "#F58EC0");
+      rect(c, tx - w / 2, base - h, 3, h, "#FFB9DB");          // cạnh bắt sáng
+      for (q = 5; q < h; q += 9) rect(c, tx - w / 2, base - h + q, w, 3, "#FFD3E9");
+      var rh = Math.round(w * 0.85);                            // mái nón
+      for (q = 0; q < rh; q++) {
+        var hw = Math.round(((rh - q) / rh) * (w / 2 + 2));
+        rect(c, tx - hw, base - h - rh + q, hw * 2 + 1, 1, q < rh * 0.45 ? "#E4517F" : "#C63A66");
+      }
+      rect(c, tx - 1, base - h - rh - 8, 2, 8, "#FFF4E8");      // cột cờ
+      rect(c, tx + 1, base - h - rh - 8, 7, 5, P.sun);
+      rect(c, tx - 3, base - h + 9, 6, 7, "#7A3D62");           // cửa sổ
+    }
+
+    var wallT = HOR - 30;
+    rect(c, 178, wallT, 120, 30, "#F9A6CD");
+    rect(c, 178, wallT, 120, 4, "#FFD3E9");
+    for (i = 0; i < 6; i++) rect(c, 180 + i * 20, wallT - 6, 11, 6, "#F9A6CD");  // răng tường
+    rect(c, 228, wallT + 12, 20, 18, "#C97BA3");                                  // cổng
+    rect(c, 232, wallT + 16, 12, 14, "#6E3457");
+    tower(192, HOR, 20, 46);
+    tower(238, HOR, 28, 64);
+    tower(284, HOR, 20, 46);
+
+    // ---- mặt đất kẹo ----
+    rect(c, 0, HOR, W, H - HOR, "#FF9ED0");
+    rect(c, 0, HOR, W, 5, "#FFC6E6");
+    for (y = HOR + 4; y < H; y += 4) {                    // lối đi loe về phía người xem
+      var half2 = Math.round(14 + (y - HOR) * 0.58);
+      rect(c, W / 2 - half2, y, half2 * 2, 4, ((y / 4) | 0) % 2 ? "#FFD9EC" : "#FFEDF6");
+    }
+    for (i = 0; i < 190; i++) {                            // cốm rắc, chừa lối đi
+      x = (i * 71) % W; y = HOR + 6 + (i * 37) % (H - HOR - 8);
+      if (Math.abs(x - W / 2) < 16 + (y - HOR) * 0.58) continue;
+      rect(c, x, y, 2, 2, [P.sun, P.white, P.aqua, P.lime, P.straw][i % 5]);
+    }
+
+    // ---- cây kẹo mút, đầu kẹo phải nhô lên trên đường chân trời ----
+    function lolli(lx, base, r, col) {
+      var sh = r * 2;
+      rect(c, lx - 3, base - sh, 6, sh, "#FFF4E8");
+      for (k = 0; k < sh; k += 7) rect(c, lx - 3, base - sh + k, 6, 3, "#F3BFD8");
+      disc(c, lx, base - sh - r, r, col);
+      discOutline(c, lx, base - sh - r, r, P.ink);
+      swirl(c, lx, base - sh - r, r, P.white, 0);
+    }
+    lolli(36, 196, 26, "#FF5FA8");
+    lolli(98, 172, 17, "#FFA23C");
+    lolli(444, 198, 28, "#FF5FA8");
+    lolli(382, 174, 18, "#7CC6F0");
+
+    // kẹo gậy cắm hai bên lối đi
+    var sticks = [[130, 168], [158, 188], [326, 186], [352, 166], [190, 204], [300, 206]];
+    for (i = 0; i < sticks.length; i++) {
+      x = sticks[i][0]; y = sticks[i][1];
+      rect(c, x, y, 5, 22, P.white);
+      for (k = 0; k < 22; k += 6) rect(c, x, y + k, 5, 3, P.straw);
+    }
+  }
+
+  var sceneCache = null;
+  function candyScene() {
+    if (!sceneCache) {
+      sceneCache = document.createElement("canvas");
+      sceneCache.width = 480; sceneCache.height = 270;
+      var g = sceneCache.getContext("2d");
+      g.imageSmoothingEnabled = false;
+      paintCandyScene(g, 480, 270);
+    }
+    return sceneCache;
+  }
+
+  // Thu cỡ chữ cho tới khi lọt bề ngang cho trước, để biệt danh dài không tràn.
+  function fitFont(c, txt, weight, size, family, maxW) {
+    while (size > 14) {
+      c.font = weight + " " + size + "px \"" + family + "\", sans-serif";
+      if (c.measureText(txt).width <= maxW) break;
+      size -= 2;
+    }
+    return size;
+  }
+
+  function buildShareCard() {
+    var cv = document.getElementById("shareCanvas");
+    var c = cv.getContext("2d");
+
+    c.imageSmoothingEnabled = false;
+    c.clearRect(0, 0, 960, 540);
+    c.drawImage(candyScene(), 0, 0, 480, 270, 0, 0, 960, 540);
+
+    // Phủ tối nửa dưới TRƯỚC, rồi mới đặt nhân vật lên. Vẽ ngược lại thì lớp
+    // phủ nuốt mất nhân vật.
+    var grad = c.createLinearGradient(0, 272, 0, 540);
+    grad.addColorStop(0, "rgba(30,12,26,0)");
+    grad.addColorStop(0.28, "rgba(30,12,26,.72)");
+    grad.addColorStop(0.55, "rgba(30,12,26,.89)");
+    grad.addColorStop(1, "rgba(30,12,26,.95)");
+    c.fillStyle = grad;
+    c.fillRect(0, 272, 960, 268);
+
+    // quầng sáng tách nhân vật khỏi nền tối
+    if (HERO_OK) {
+      var z = 5, hw = HERO_W * z, hh = HERO_H * z, hx = 720, hy = 540 - hh - 28;
+      var halo = c.createRadialGradient(hx + hw / 2, hy + hh * 0.55, 20, hx + hw / 2, hy + hh * 0.55, 180);
+      halo.addColorStop(0, "rgba(255,209,0,.32)");
+      halo.addColorStop(1, "rgba(255,209,0,0)");
+      c.fillStyle = halo;
+      c.fillRect(hx - 120, hy - 60, hw + 240, hh + 120);
+      c.imageSmoothingEnabled = false;
+      c.drawImage(HERO, H_CHEER * HERO_W, 0, HERO_W, HERO_H, hx, hy, hw, hh);
+    }
+
+    c.imageSmoothingEnabled = true;
+    c.textBaseline = "alphabetic";
+    c.textAlign = "left";
+
+    // chữ ký trò chơi ở góc trên, có bóng vì nền trời sáng
+    c.font = "800 26px \"Baloo 2\", sans-serif";
+    var lead = c.measureText("BẢN ĐỒ ").width;
+    c.fillStyle = "rgba(43,27,20,.4)";
+    c.fillText("BẢN ĐỒ CẦU VỒNG", 42, 51);
+    c.fillStyle = P.white;
+    c.fillText("BẢN ĐỒ ", 40, 48);
+    c.fillStyle = P.sun;
+    c.fillText("CẦU VỒNG", 40 + lead, 48);
+
+    var nick = profile.nick || "Bạn";
+    var rank = rankOf(profile.total);
+
+    // tên người chơi, thu cỡ nếu dài để không đụng huy hiệu hạng
+    var ns = fitFont(c, nick, "800", 40, "Baloo 2", 430);
+    c.font = "800 " + ns + "px \"Baloo 2\", sans-serif";
+    c.fillStyle = "rgba(24,8,20,.55)";
+    c.fillText(nick, 42, 380);
+    c.fillStyle = P.white;
+    c.fillText(nick, 40, 378);
+    var nickW = c.measureText(nick).width;
+
+    // huy hiệu hạng nằm ngay cạnh tên
+    var bx = 40 + nickW + 18;
+    c.font = "800 20px \"Baloo 2\", sans-serif";
+    var badge = rank ? "HẠNG #" + rank : "CHƯA XẾP HẠNG";
+    var bw = c.measureText(badge).width + 24;
+    rect(c, bx, 354, bw, 30, rank ? "#E4002B" : "rgba(255,255,255,.16)");
+    rect(c, bx, 354, bw, 3, rank ? "#FF5C7A" : "rgba(255,255,255,.22)");
+    c.fillStyle = P.white;
+    c.fillText(badge, bx + 12, 376);
+
+    rect(c, 40, 400, 660, 2, "rgba(255,255,255,.2)");
+
+    /* Dải thống kê: tổng điểm đứng đầu rồi tới kỷ lục bốn game, mỗi cột là số
+       to trên nhãn nhỏ — giống dải chỉ số của thẻ khoe game đấu. */
+    var cols = [{ v: profile.total, name: "TỔNG ĐIỂM", unit: "điểm", hero: true }];
+    GAMES.forEach(function (gm) {
+      var cfg = BOARDS[gm.id];
+      cols.push({ v: profile.best[cfg ? cfg.key : gm.id] || 0, name: gm.name, unit: cfg ? cfg.unit : "" });
+    });
+
+    cols.forEach(function (col, i) {
+      var cx = 40 + i * 132;
+      if (i) rect(c, cx - 16, 420, 1, 56, "rgba(255,255,255,.16)");
+      c.font = "800 " + (col.hero ? 36 : 30) + "px \"Baloo 2\", sans-serif";
+      c.fillStyle = col.hero ? P.sun : (col.v ? P.white : "rgba(255,255,255,.34)");
+      c.fillText(String(col.v), cx, 454);
+      c.font = "700 13px \"Be Vietnam Pro\", sans-serif";
+      c.fillStyle = col.hero ? "rgba(255,209,0,.88)" : "rgba(255,255,255,.78)";
+      c.fillText(col.name, cx, 476);
+      c.font = "600 13px \"Be Vietnam Pro\", sans-serif";
+      c.fillStyle = "rgba(255,255,255,.6)";
+      c.fillText(col.unit, cx, 494);
+    });
+
+    c.textAlign = "right";
+    c.font = "600 16px \"Be Vietnam Pro\", sans-serif";
+    c.fillStyle = "rgba(255,255,255,.62)";
+    c.fillText("bandocauvong.github.io", 924, 522);
+    c.textAlign = "left";
+
+    return cv;
+  }
+
+  var sharePanel = document.getElementById("sharePanel");
+  var shareHint = document.getElementById("shareHint");
+
+  function openShare() {
+    // Chờ phông tải xong rồi mới vẽ, không thì chữ rơi về phông dự phòng.
+    function go() {
+      buildShareCard();
+      shareHint.textContent = "Nhấn giữ vào ảnh để lưu về máy.";
+      sharePanel.hidden = false;
+    }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(go).catch(go);
+    else go();
+  }
+
+  document.getElementById("shareRank").addEventListener("click", openShare);
+  document.getElementById("endShare").addEventListener("click", openShare);
+  document.getElementById("shareClose").addEventListener("click", function () { sharePanel.hidden = true; });
+
+  document.getElementById("shareSend").addEventListener("click", function () {
+    var cv = document.getElementById("shareCanvas");
+    if (!cv.toBlob) { shareHint.textContent = "Máy không hỗ trợ chia sẻ trực tiếp — nhấn giữ vào ảnh để lưu."; return; }
+    cv.toBlob(function (blob) {
+      if (!blob) return;
+      try {
+        var file = new File([blob], "bandocauvong.png", { type: "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          navigator.share({ files: [file], title: "Bản đồ cầu vồng" }).catch(function () {});
+          return;
+        }
+      } catch (e) {}
+      shareHint.textContent = "Máy không mở được khung chia sẻ — nhấn giữ vào ảnh để lưu.";
+    }, "image/png");
+  });
+
   document.getElementById("openQR").addEventListener("click", function () { qrPanel.hidden = false; });
   document.getElementById("qrClose").addEventListener("click", function () { qrPanel.hidden = true; });
 
