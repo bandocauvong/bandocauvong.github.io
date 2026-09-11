@@ -1,3 +1,10 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFD100">
+<meta name="description" content="Bản đồ cầu vồng — 4 mini-game pixel chơi thẳng trên trình duyệt điện thoại. Gom điểm, leo bảng xếp hạng.">
 <title>Bản đồ cầu vồng</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,8 +37,14 @@
 
   * { box-sizing: border-box; }
 
+  /* iOS inflates text in landscape without this, which throws every ratio out. */
+  html { -webkit-text-size-adjust: 100%; }
+
   body {
     margin: 0;
+    /* stop pull-to-refresh and rubber-banding from stealing drags mid-game */
+    overscroll-behavior: none;
+    touch-action: manipulation;
     background: var(--berry);
     color: var(--ink);
     font-family: var(--font-body);
@@ -49,7 +62,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 12px;
+    padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right))
+             calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
     gap: 10px;
     background-color: var(--sun);
     background-image:
@@ -102,7 +116,9 @@
   /* First run: a door you walk through, not a field buried in the hub. */
   .onboard {
     position: fixed; inset: 0; z-index: 40;
-    display: flex; align-items: center; justify-content: center; padding: 20px;
+    display: flex; align-items: center; justify-content: center;
+    padding: calc(20px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right))
+             calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));
     background-color: var(--sun);
     background-image:
       radial-gradient(circle at 3px 3px, rgba(255,255,255,.34) 1.5px, transparent 1.7px),
@@ -361,7 +377,45 @@
   .verdict.lose { color: var(--ink-soft); }
   .board .note { margin: 0; font-size: .78rem; line-height: 1.45; color: var(--ink-soft); }
 
-  @media (max-width: 380px) { .grid { grid-template-columns: 1fr; } .mission.wide { flex-direction: row; } }
+  /* The play field is a 160x284 portrait canvas. In phone landscape the screen
+     is too short to hold it without scrolling, and a scrolling page steals the
+     drags the games need — so ask for portrait instead of degrading. Gated on
+     height too, so a short desktop window is the only false positive. */
+  .rotate { display: none; }
+  @media (orientation: landscape) and (max-height: 520px) {
+    .rotate {
+      position: fixed; inset: 0; z-index: 60;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+      background-color: var(--sun);
+      background-image:
+        radial-gradient(circle at 3px 3px, rgba(255,255,255,.34) 1.5px, transparent 1.7px),
+        repeating-conic-gradient(from 0deg at 50% 45%,
+          var(--sun-lt) 0deg 6.2deg, rgba(255,255,255,0) 6.2deg 12.4deg);
+      background-size: 14px 14px, 100% 100%;
+      text-align: center; padding: 20px;
+    }
+  }
+  .rotate .phone {
+    width: 46px; height: 72px; border: 4px solid var(--ink); background: var(--cream);
+    position: relative; animation: tipUp 2.2s ease-in-out infinite;
+  }
+  .rotate .phone::after {
+    content: ""; position: absolute; left: 50%; bottom: 5px; transform: translateX(-50%);
+    width: 16px; height: 3px; background: var(--ink);
+  }
+  @keyframes tipUp {
+    0%, 45% { transform: rotate(-90deg); }
+    60%, 100% { transform: rotate(0deg); }
+  }
+  @media (prefers-reduced-motion: reduce) { .rotate .phone { animation: none; } }
+  .rotate p {
+    margin: 0; font-family: var(--font-display); font-weight: 800;
+    font-size: 1.3rem; color: var(--ink); max-width: 18ch;
+  }
+
+  /* Two columns hold down to ~300px (cards are ~140px there), and keeping them
+     roughly halves how far the hub scrolls on a short phone. */
+  @media (max-width: 300px) { .grid { grid-template-columns: 1fr; } }
   /* Short viewports squeeze the stage to its minimum; squeeze the board too so
      the Play button stays on screen. */
   @media (max-height: 620px) {
@@ -371,6 +425,14 @@
   }
   @media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; } }
 </style>
+</head>
+
+<body>
+
+<div class="rotate" aria-hidden="true">
+  <span class="phone"></span>
+  <p>Xoay dọc điện thoại để chơi</p>
+</div>
 
 <section class="onboard" id="onboard" hidden>
   <div class="ob-card">
@@ -2517,3 +2579,5 @@
   buildHub();
 })();
 </script>
+</body>
+</html>
