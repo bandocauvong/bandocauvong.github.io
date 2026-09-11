@@ -74,18 +74,74 @@
   .swirl { width: 28px; height: 28px; flex: none; display: block; image-rendering: pixelated; }
 
   .stamps {
-    display: flex; align-items: center; gap: 8px;
-    font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    display: flex; align-items: baseline; gap: 7px;
+    font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
     color: var(--ink);
   }
-  .pips { display: flex; gap: 4px; }
-  .pip {
-    width: 14px; height: 14px;
-    background: rgba(43,27,20,.16);
-    box-shadow: inset 0 0 0 2px var(--ink);
-    transition: background .2s;
+  .stamps b {
+    font-family: var(--font-display); font-size: 1.3rem; line-height: 1;
+    color: var(--red); font-variant-numeric: tabular-nums; letter-spacing: 0;
   }
-  .pip.on { background: var(--red); }
+
+  .panel {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 13px 14px; text-align: left; cursor: pointer;
+    background: var(--cream); color: var(--ink); border: 3px solid var(--ink);
+    box-shadow: 0 5px 0 rgba(43,27,20,.35);
+    transition: transform .1s, box-shadow .1s, background .2s;
+  }
+  .panel:hover { background: #FFF; }
+  .panel:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(43,27,20,.35); }
+  .panel:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+  .panel canvas { width: 40px; height: 40px; image-rendering: pixelated; flex: none; border: 2px solid var(--ink); }
+  .panel .ptxt { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+  .panel strong { font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
+  .panel span { font-size: .74rem; color: var(--ink-soft); }
+  .panel .chev { font-size: 1.4rem; color: var(--ink-soft); flex: none; }
+
+  .nickbar {
+    display: flex; align-items: center; gap: 9px;
+    padding: 10px 14px; background: var(--cream); border: 3px solid var(--ink);
+    box-shadow: 0 5px 0 rgba(43,27,20,.35);
+  }
+  .nickbar label { font-size: .66rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); flex: none; }
+  .nickbar input {
+    flex: 1; min-width: 0; border: none; border-bottom: 2px solid var(--ink);
+    background: transparent; font-family: var(--font-display); font-weight: 700;
+    font-size: 1rem; color: var(--ink); padding: 3px 2px;
+  }
+  .nickbar input:focus { outline: none; border-bottom-color: var(--red); }
+
+  /* leaderboard */
+  .board-screen { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+  .board-screen[hidden] { display: none; }
+  .tabs { display: flex; gap: 6px; }
+  .tab {
+    flex: 1; padding: 9px 6px; cursor: pointer;
+    font-family: var(--font-display); font-weight: 700; font-size: .85rem;
+    background: rgba(255,248,231,.55); color: var(--ink-soft);
+    border: 3px solid var(--ink);
+  }
+  .tab.on { background: var(--red); color: var(--cream); }
+  .tab:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .demo-note {
+    margin: 0; padding: 7px 10px; font-size: .68rem; line-height: 1.4;
+    background: var(--ink); color: var(--sun); font-weight: 600;
+  }
+  .ranks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+  .ranks li {
+    display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 9px;
+    padding: 8px 10px; background: var(--cream); border: 2px solid var(--ink);
+    font-size: .84rem;
+  }
+  .ranks li .no { font-family: var(--font-display); font-weight: 800; color: var(--ink-soft); text-align: center; }
+  .ranks li .who { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ranks li .pts { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--red); }
+  .ranks li.top1 .no, .ranks li.top2 .no, .ranks li.top3 .no { color: var(--red); }
+  .ranks li.you { background: var(--sun); border-color: var(--ink); }
+  .ranks li.you .pts { color: var(--ink); }
+  .board-actions { display: flex; gap: 8px; }
+  .board-actions .btn { flex: 1; padding: 10px 8px; font-size: .95rem; }
 
   .viewport { width: 100%; max-width: var(--max); flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
@@ -326,8 +382,8 @@
       <span>CHUPA <b>ARCADE</b></span>
     </div>
     <div class="stamps">
-      <span>Tem</span>
-      <div class="pips" id="pips" aria-label="Tem đã thu thập"></div>
+      <span>Điểm</span>
+      <b id="totalPts">0</b>
     </div>
   </div>
 
@@ -340,11 +396,19 @@
 
       <div class="grid" id="missionGrid"></div>
 
-      <div class="reward">
-        <h3>Đổi quà</h3>
-        <div class="meter"><i id="meterFill"></i></div>
-        <p id="rewardText">Hoàn thành mục tiêu của cả 4 nhiệm vụ để mở phần thưởng.</p>
+      <div class="nickbar">
+        <label for="nickInput">Biệt danh</label>
+        <input id="nickInput" maxlength="14" placeholder="Nhập biệt danh của bạn">
       </div>
+
+      <button class="panel" id="openBoard" type="button">
+        <canvas id="boardIcon" width="26" height="26"></canvas>
+        <span class="ptxt">
+          <strong>Bảng xếp hạng toàn quốc</strong>
+          <span id="rankLine">Chơi để tích điểm</span>
+        </span>
+        <span class="chev">›</span>
+      </button>
 
       <div class="qrblock">
         <canvas id="qrCanvas" width="120" height="120" aria-label="Mã QR dẫn tới web game"></canvas>
@@ -354,6 +418,23 @@
           <span class="qrurl" id="qrTarget"></span>
           <button id="copyLink" type="button">Sao chép link</button>
         </div>
+      </div>
+    </section>
+
+    <section class="board-screen" id="board" hidden>
+      <div class="playbar">
+        <button class="back" id="boardBack" type="button">‹ Nhiệm vụ</button>
+        <div class="playtitle">Bảng xếp hạng</div>
+        <div></div>
+      </div>
+      <div class="tabs">
+        <button class="tab on" id="tabTotal" type="button">Đua cày</button>
+        <button class="tab" id="tabBest" type="button">Kỷ lục từng game</button>
+      </div>
+      <p class="demo-note">Dữ liệu mẫu dựng cho bản demo — không phải thành tích của người chơi thật.</p>
+      <ul class="ranks" id="rankList"></ul>
+      <div class="board-actions">
+        <button class="btn" id="shareRank" type="button">Tạo ảnh khoe</button>
       </div>
     </section>
 
@@ -1079,9 +1160,11 @@
   var hubEl = document.getElementById("hub");
   var playEl = document.getElementById("play");
   var gridEl = document.getElementById("missionGrid");
-  var pipsEl = document.getElementById("pips");
-  var meterFill = document.getElementById("meterFill");
-  var rewardText = document.getElementById("rewardText");
+  var totalPtsEl = document.getElementById("totalPts");
+  var rankLineEl = document.getElementById("rankLine");
+  var boardEl = document.getElementById("board");
+  var rankListEl = document.getElementById("rankList");
+  var nickInput = document.getElementById("nickInput");
   var playTitle = document.getElementById("playTitle");
   var statMain = document.getElementById("statMain");
   var statSub = document.getElementById("statSub");
@@ -1097,9 +1180,39 @@
   var endVerdict = document.getElementById("endVerdict");
   var endNote = document.getElementById("endNote");
 
-  var cleared = {};
-  try { cleared = JSON.parse(localStorage.getItem("chupa.cleared") || "{}") || {}; } catch (e) { cleared = {}; }
-  function saveCleared() { try { localStorage.setItem("chupa.cleared", JSON.stringify(cleared)); } catch (e) {} }
+  /* ---------- profile, points, records ----------
+
+     Raw scores are on wildly different scales (thousands of match points, hundreds
+     of metres, a dozen floors, five goals). The per-game record boards rank on raw
+     score, but the cumulative board has to sum across games, so each game gets a
+     coefficient. They are calibrated from runs measured during development so that
+     one good run in ANY game is worth roughly 120 points — otherwise Ghép Kẹo's
+     four-digit scores would drown out everything else. Tune here and nowhere else. */
+  var COEF = {
+    match:  1 / 30,   // ván tốt ~3600 điểm  -> 120
+    runner: 1 / 6,    // ván tốt ~720 mét    -> 120
+    flappy: 8,        // ván tốt ~15 tầng    -> 120
+    pong:   24        // thắng 5 bàn         -> 120
+  };
+
+  var profile = { nick: "", total: 0, best: {} };
+  try {
+    var raw = JSON.parse(localStorage.getItem("chupa.profile") || "null");
+    if (raw && typeof raw === "object") {
+      profile.nick = String(raw.nick || "");
+      profile.total = Number(raw.total) || 0;
+      profile.best = (raw.best && typeof raw.best === "object") ? raw.best : {};
+    }
+  } catch (e) {}
+  function saveProfile() { try { localStorage.setItem("chupa.profile", JSON.stringify(profile)); } catch (e) {} }
+
+  // Demo ladder. Clearly labelled as sample data in the UI so nobody reads these
+  // as real players.
+  var DEMO_RANKS = [
+    ["BinBon2k", 4820], ["kẹo_mút_hà_nội", 4415], ["TuanAnh_98", 4080],
+    ["MeoConCanTho", 3760], ["haha_lolli", 3495], ["Nguyen_Vy", 3210],
+    ["ChupsFan01", 2980], ["bé_su_kem", 2745], ["DatDepTrai", 2510], ["mun_mun", 2305]
+  ];
 
   var active = null, running = false, lastT = 0;
 
@@ -1112,14 +1225,14 @@
   var match = {
     id: "match",
     name: "Ghép Kẹo",
-    goal: 1900,
-    goalText: "Đạt 1900 điểm trong 22 lượt",
-    control: "Chạm để chọn, rồi vuốt sang ô bên cạnh.",
+    goal: 1,
+    goalText: "Cày điểm tới khi hết nước đi",
+    control: "Chạm để chọn, rồi vuốt sang ô bên cạnh. Chơi tới khi bàn hết nước.",
     unit: "ĐIỂM",
-    subInit: "22 LƯỢT",
+    subInit: "ĐANG CÀY",
     COLS: 7, ROWS: 9, CELL: 20, OX: 10, OY: 75,
 
-    board: [], score: 0, moves: 22, ended: false,
+    board: [], score: 0, moves: Infinity, swaps: 0, ended: false,
     // idle -> swap -> (swapback | clear -> fall -> clear ...) -> idle
     phase: "idle", anim: 0, chain: 0,
     swapA: null, swapB: null,
@@ -1142,11 +1255,11 @@
     },
 
     reset: function () {
-      this.score = 0; this.moves = 22; this.ended = false;
+      this.score = 0; this.moves = Infinity; this.ended = false;
       this.phase = "idle"; this.anim = 0; this.chain = 0;
       this.sel = null; this.dragFrom = null;
       this.swapA = null; this.swapB = null;
-      this.sparks = []; this.pops = []; this.glow = 0;
+      this.sparks = []; this.pops = []; this.glow = 0; this.swaps = 0;
       this.board = [];
       for (var r = 0; r < this.ROWS; r++) {
         this.board.push([]);
@@ -1200,7 +1313,7 @@
     },
 
     pointer: function (kind, x, y) {
-      if (this.phase !== "idle" || this.moves <= 0) return;
+      if (this.phase !== "idle" || this.ended) return;
       var cell = this.cellAt(x, y);
       if (kind === "down") {
         if (!cell) { this.sel = null; this.dragFrom = null; return; }
@@ -1293,11 +1406,29 @@
       this.phase = "fall";
     },
 
+    hasMove: function () {
+      for (var r = 0; r < this.ROWS; r++) for (var c = 0; c < this.COLS; c++) {
+        var dirs = [[0, 1], [1, 0]];
+        for (var d = 0; d < 2; d++) {
+          var r2 = r + dirs[d][0], c2 = c + dirs[d][1];
+          if (r2 >= this.ROWS || c2 >= this.COLS) continue;
+          var A = this.board[r][c], B = this.board[r2][c2];
+          if (!A || !B) continue;
+          this.board[r][c] = B; this.board[r2][c2] = A;
+          var ok = this.findMatches().length > 0;
+          this.board[r][c] = A; this.board[r2][c2] = B;
+          if (ok) return true;
+        }
+      }
+      return false;
+    },
+
     settle: function () {
       if (this.findMatches().length) { this.chain++; this.beginClear(); return; }
       this.chain = 0;
       this.phase = "idle";
-      if (this.moves <= 0 && !this.ended) {
+      // Endless: the run only stops when the board is genuinely dead.
+      if (!this.ended && !this.hasMove()) {
         this.ended = true;
         var self = this;
         setTimeout(function () { finishRun(self.score); }, 280);
@@ -1331,8 +1462,8 @@
           if (B) { B.dx = 0; B.dy = 0; }
           if (this.phase === "swap") {
             if (this.findMatches().length) {
-              this.moves--;
-              statSub.textContent = this.moves + " LƯỢT";
+              this.swaps++;
+              statSub.textContent = this.swaps + " NƯỚC";
               this.chain = 0;
               this.beginClear();
             } else {
@@ -1873,7 +2004,7 @@
     GAMES.forEach(function (g) {
       var b = document.createElement("button");
       b.type = "button";
-      b.className = "mission" + (cleared[g.id] ? " cleared" : "");
+      b.className = "mission" + ((profile.best[g.id] || 0) > 0 ? " cleared" : "");
       var cv = document.createElement("canvas");
       cv.width = 26; cv.height = 26;
       var cc = cv.getContext("2d");
@@ -1891,21 +2022,20 @@
   }
 
   function paintStamps() {
-    pipsEl.innerHTML = "";
-    var n = 0;
-    GAMES.forEach(function (g) {
-      var d = document.createElement("span");
-      d.className = "pip" + (cleared[g.id] ? " on" : "");
-      pipsEl.appendChild(d);
-      if (cleared[g.id]) n++;
-    });
-    meterFill.style.transform = "scaleX(" + (n / GAMES.length) + ")";
-    rewardText.textContent = n >= GAMES.length
-      ? "Đủ tem. Đây là chỗ gắn mã ưu đãi hoặc quà — bản demo cố tình chưa làm phần này."
-      : "Còn " + (GAMES.length - n) + " nhiệm vụ nữa là đủ tem đổi quà.";
+    totalPtsEl.textContent = profile.total;
+    var rank = rankOf(profile.total);
+    rankLineEl.textContent = profile.total > 0
+      ? (rank ? "Bạn đang hạng " + rank : "Chưa lọt top 10 — còn " +
+          (DEMO_RANKS[DEMO_RANKS.length - 1][1] - profile.total) + " điểm nữa")
+      : "Chơi để tích điểm";
     Array.prototype.forEach.call(gridEl.children, function (el, i) {
-      if (GAMES[i]) el.classList.toggle("cleared", !!cleared[GAMES[i].id]);
+      if (GAMES[i]) el.classList.toggle("cleared", (profile.best[GAMES[i].id] || 0) > 0);
     });
+  }
+
+  function rankOf(total) {
+    for (var i = 0; i < DEMO_RANKS.length; i++) if (total > DEMO_RANKS[i][1]) return i + 1;
+    return 0;
   }
 
   /* ---------- instruction board ---------- */
@@ -1939,7 +2069,7 @@
     playTitle.textContent = g.name;
     statMain.textContent = "0";
     statSub.textContent = g.subInit || g.unit;
-    ovKicker.textContent = cleared[g.id] ? "Đã hoàn thành · chơi lại" : "Hướng dẫn chơi";
+    ovKicker.textContent = (profile.best[g.id] || 0) > 0 ? "Kỷ lục: " + profile.best[g.id] + " " + g.unit : "Hướng dẫn chơi";
     ovTitle.textContent = g.name;
     buildLegend(g);
     ovCtl.textContent = g.control;
@@ -1985,14 +2115,30 @@
   function finishRun(scoreVal) {
     running = false;
     var g = active;
-    var win = scoreVal >= g.goal;
-    if (win && !cleared[g.id]) { cleared[g.id] = true; saveCleared(); }
+    // Two people sharing one phone can hand each other free wins, so only solo
+    // play feeds the ladder.
+    var scores = !(g.id === "pong" && g.mode === "duo");
+    var gained = scores ? Math.round(scoreVal * (COEF[g.id] || 0)) : 0;
+    var prevBest = profile.best[g.id] || 0;
+    var record = scores && scoreVal > prevBest;
+
+    if (scores) {
+      profile.total += gained;
+      if (record) profile.best[g.id] = scoreVal;
+      saveProfile();
+    }
+
     endScore.textContent = scoreVal;
-    endVerdict.textContent = win ? "Đạt mục tiêu — nhận 1 tem" : "Chưa đạt mục tiêu";
-    endVerdict.className = "verdict " + (win ? "win" : "lose");
-    endNote.textContent = win
-      ? "Tem đã được cộng vào thẻ của bạn."
-      : "Cần " + g.goal + " " + g.unit.toLowerCase() + " để lấy tem. Thử lại nhé.";
+    if (!scores) {
+      endVerdict.textContent = "Trận 2 người — không tính điểm";
+      endVerdict.className = "verdict lose";
+      endNote.textContent = "Chuyển sang chế độ đấu bot nếu muốn cộng điểm vào bảng xếp hạng.";
+    } else {
+      endVerdict.textContent = "+" + gained + " điểm" + (record ? " · kỷ lục mới!" : "");
+      endVerdict.className = "verdict win";
+      endNote.textContent = "Tổng điểm của bạn: " + profile.total +
+        (record ? "" : " · kỷ lục " + g.unit.toLowerCase() + ": " + prevBest);
+    }
     ovEnd.hidden = false;
   }
 
@@ -2000,9 +2146,75 @@
     running = false;
     active = null;
     playEl.hidden = true;
+    boardEl.hidden = true;
     hubEl.hidden = false;
     paintStamps();
   }
+
+  /* ---------- leaderboard ---------- */
+
+  var boardTab = "total";
+
+  function openBoard() {
+    hubEl.hidden = true;
+    playEl.hidden = true;
+    boardEl.hidden = false;
+    paintBoard();
+  }
+
+  function row(no, who, pts, cls) {
+    var li = document.createElement("li");
+    if (cls) li.className = cls;
+    var a = document.createElement("span"); a.className = "no"; a.textContent = no;
+    var b = document.createElement("span"); b.className = "who"; b.textContent = who;
+    var c = document.createElement("span"); c.className = "pts"; c.textContent = pts;
+    li.appendChild(a); li.appendChild(b); li.appendChild(c);
+    return li;
+  }
+
+  function paintBoard() {
+    rankListEl.innerHTML = "";
+    var me = profile.nick || "Bạn";
+    if (boardTab === "total") {
+      var mine = rankOf(profile.total);
+      var placed = false;
+      DEMO_RANKS.forEach(function (r, i) {
+        if (mine === i + 1 && !placed) {
+          rankListEl.appendChild(row(i + 1, me + " (bạn)", profile.total, "you"));
+          placed = true;
+        }
+        var n = placed ? i + 2 : i + 1;
+        if (n <= 10) rankListEl.appendChild(row(n, r[0], r[1], n <= 3 ? "top" + n : ""));
+      });
+      if (!placed) rankListEl.appendChild(row("—", me + " (bạn)", profile.total, "you"));
+    } else {
+      GAMES.forEach(function (g, i) {
+        var best = profile.best[g.id] || 0;
+        rankListEl.appendChild(row(i + 1, g.name + " · kỷ lục của bạn", best + " " + g.unit.toLowerCase(), best > 0 ? "you" : ""));
+      });
+    }
+  }
+
+  document.getElementById("openBoard").addEventListener("click", openBoard);
+  document.getElementById("boardBack").addEventListener("click", backToHub);
+  document.getElementById("tabTotal").addEventListener("click", function () {
+    boardTab = "total";
+    this.classList.add("on");
+    document.getElementById("tabBest").classList.remove("on");
+    paintBoard();
+  });
+  document.getElementById("tabBest").addEventListener("click", function () {
+    boardTab = "best";
+    this.classList.add("on");
+    document.getElementById("tabTotal").classList.remove("on");
+    paintBoard();
+  });
+
+  nickInput.value = profile.nick;
+  nickInput.addEventListener("input", function () {
+    profile.nick = this.value.trim();
+    saveProfile();
+  });
 
   document.getElementById("endAgain").addEventListener("click", function () {
     startRun(active ? active.mode : null);
@@ -2053,6 +2265,16 @@
   /* =========================================================
      Wordmark + QR
      ========================================================= */
+
+  (function () {
+    var c = document.getElementById("boardIcon").getContext("2d");
+    c.imageSmoothingEnabled = false;
+    rect(c, 0, 0, 26, 26, P.sun);
+    rect(c, 4, 14, 5, 10, P.red);
+    rect(c, 10, 8, 5, 16, P.red);
+    rect(c, 16, 17, 5, 7, P.red);
+    rect(c, 10, 4, 5, 4, P.ink);
+  })();
 
   (function () {
     var c = document.getElementById("swirlMark").getContext("2d");
