@@ -1461,32 +1461,147 @@
 
   var TILE_COL = [P.straw, P.lime, P.cola, P.aqua, P.aqua, P.pink];
 
-  /* Board sweets are drawn from a sprite cache at a slightly reduced size. Two
-     reasons: the badge needs clear space around the sweet instead of sitting on
-     top of it, and one drawImage per tile is far cheaper than re-running the
-     sprite code 63 times a frame. */
-  var TILE_SPRITE = null;
-  var TILE_DRAW = 20;
+  /* Board sweets are hand-placed at 13x13 instead of being shrunk from the big
+     sprites. Scaling 28px art down to 20px dropped pixels unevenly and turned
+     everything to mush; at this size every pixel has to be placed on purpose.
+     Each map is baked once into its own canvas and then blitted 1:1, so the art
+     stays exact and the board costs one drawImage per cell. */
 
-  function tileSprites() {
+  var TILE_ART = [
+    [ // kẹo mút
+      "....OOOOO....",
+      "..OOAAAAAOO..",
+      ".OAAAAAAAAAO.",
+      ".OAAWWWWWAAO.",
+      "OAAWAAAAAWAAO",
+      "OAHWAAWWWAWAO",
+      "OAAWAWAAAAWAO",
+      ".OAWAWWWWWAO.",
+      ".OAAWAAAAAAO.",
+      "..OOAAAAAOO..",
+      "....OOOOO....",
+      "......S......",
+      "......S......"
+    ],
+    [ // gấu dẻo
+      "..OO.....OO..",
+      ".OAAO...OAAO.",
+      ".OAAOOOOOAAO.",
+      "..OAAAAAAAO..",
+      ".OAAAAAAAAAO.",
+      ".OABAAAAABAO.",
+      ".OAAAAAAAAAO.",
+      ".OAAABBBAAAO.",
+      "OAAAAAAAAAAAO",
+      "OAAOAAAAAOAAO",
+      "OAAOAAAAAOAAO",
+      ".OAAAAAAAAAO.",
+      "..OAAO.OAAO.."
+    ],
+    [ // chai cola
+      ".....OOO.....",
+      ".....OCO.....",
+      "....OOCOO....",
+      "....OCCCO....",
+      "...OOAAAOO...",
+      "..OAAAAAAAO..",
+      "..OAHAAAAAO..",
+      "..OAHAAAAAO..",
+      "..OAAAAAAAO..",
+      "..OAAAAAAAO..",
+      "..OABBBBBAO..",
+      "..OOOOOOOOO..",
+      "............."
+    ],
+    [ // belt cầu vồng
+      ".OOOOOOOOOOO.",
+      ".O111111111O.",
+      ".O111111111O.",
+      ".O222222222O.",
+      ".O222222222O.",
+      ".O333333333O.",
+      ".O333333333O.",
+      ".O444444444O.",
+      ".O444444444O.",
+      ".O555555555O.",
+      ".O555555555O.",
+      ".OOOOOOOOOOO.",
+      "............."
+    ],
+    [ // sour tube
+      "...OOOOOOO...",
+      "..OAAAAAAAO..",
+      ".OAHAAAAAAAO.",
+      ".OAHAAAAAAAO.",
+      ".OAAAWWWAAAO.",
+      ".OAAAWWWAAAO.",
+      ".OAAAWWWAAAO.",
+      ".OAAAAAAAAAO.",
+      ".OAAAAAAAAAO.",
+      "..OAAAAAAAO..",
+      "...OOOOOOO...",
+      ".............",
+      "............."
+    ],
+    [ // kẹo bạc hà
+      "....OOOOO....",
+      "..OOWWWWWOO..",
+      ".OWWAWWWAWWO.",
+      ".OWWWAWAWWWO.",
+      "OWWWWAAAWWWWO",
+      "OWAAAAAAAAAWO",
+      "OWWWWAAAWWWWO",
+      ".OWWWAWAWWWO.",
+      ".OWWAWWWAWWO.",
+      "..OOWWWWWOO..",
+      "....OOOOO....",
+      ".............",
+      "............."
+    ]
+  ];
+
+  var TILE_PAL = [
+    { O: P.ink, A: P.straw, W: P.cream, H: P.white, S: "#F2E3C4" },
+    { O: P.ink, A: P.lime, B: "#1F7A2C" },
+    { O: P.ink, A: P.cola, C: "#D79A5E", H: "#D9A878", B: P.colaDk },
+    { O: P.ink, "1": P.straw, "2": P.orange, "3": P.lemon, "4": P.lime, "5": P.aqua },
+    { O: P.ink, A: P.aqua, H: "#9BE7FA", W: P.cream },
+    { O: P.ink, W: P.cream, A: P.pink }
+  ];
+
+  var TILE_SPRITE = null;
+
+  function bakeTiles() {
     if (TILE_SPRITE) return TILE_SPRITE;
     TILE_SPRITE = [];
-    for (var i = 0; i < 6; i++) {
+    for (var i = 0; i < TILE_ART.length; i++) {
       var o = document.createElement("canvas");
-      o.width = 28; o.height = 28;
+      o.width = 13; o.height = 13;
       var g = o.getContext("2d");
       g.imageSmoothingEnabled = false;
-      // centred a touch high so the lollipop stick is not clipped by the buffer
-      drawCandy(g, KINDS[i], 14, 12, TILE_COL[i], 0);
+      var art = TILE_ART[i], pal = TILE_PAL[i];
+      for (var r = 0; r < art.length; r++) {
+        for (var k = 0; k < art[r].length; k++) {
+          var col = pal[art[r].charAt(k)];
+          if (!col) continue;
+          g.fillStyle = col;
+          g.fillRect(k, r, 1, 1);
+        }
+      }
       TILE_SPRITE.push(o);
     }
     return TILE_SPRITE;
   }
 
+  // 1:1 on whole pixels — no resampling, so nothing softens.
   function drawTile(c, type, cx, cy) {
-    var sp = tileSprites()[type];
-    var w = TILE_DRAW;
-    c.drawImage(sp, Math.round(cx - w / 2), Math.round(cy - w / 2), w, w);
+    c.drawImage(bakeTiles()[type], Math.round(cx) - 6, Math.round(cy) - 6);
+  }
+
+  // Whole-number zoom only, which stays exact.
+  function drawTileBig(c, type, cx, cy, zoom) {
+    var sp = bakeTiles()[type], w = 13 * zoom;
+    c.drawImage(sp, Math.round(cx) - w / 2, Math.round(cy) - w / 2, w, w);
   }
 
   /* Chance that a newly dropped tile carries a power. Read as frequency, not as
@@ -1900,9 +2015,7 @@
 
       rect(c, 0, 0, BW, 44, P.red);
       rect(c, 0, 44, BW, 4, P.ink);
-      for (var s = 0; s < 6; s++) {
-        drawCandy(c, KINDS[s], 16 + s * 26, KINDS[s] === "lolly" ? 18 : 21, TILE_COL[s], s);
-      }
+      for (var s = 0; s < 6; s++) drawTileBig(c, s, 16 + s * 26, 21, 2);
 
       var BX = this.OX, BY = this.OY, CE = this.CELL;
       rect(c, BX - 4, BY - 4, this.COLS * CE + 8, this.ROWS * CE + 8, P.ink);
