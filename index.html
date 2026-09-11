@@ -1,0 +1,1994 @@
+<title>Chupa Arcade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+
+<style>
+  /* Pack-art palette: sunburst yellow ground, brand red, and the gummy/belt
+     flavour colours. Committed single visual world, painted explicitly so the
+     page holds on any host ground. */
+  :root {
+    --sun:      #FFD100;
+    --sun-lt:   #FFE95C;
+    --sun-dk:   #E0B400;
+    --red:      #E4002B;
+    --red-dk:   #A80020;
+    --red-lt:   #FF3355;
+    --cream:    #FFF8E7;
+    --ink:      #2B1B14;
+    --ink-soft: #6B5344;
+    --jade:     #1FA971;
+    --berry:    #2A0F26;
+    --berry-lt: #43193C;
+    --dim:      #C9AEC2;
+
+    --font-display: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+    --font-body: "Be Vietnam Pro", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+    --max: 470px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--berry);
+    color: var(--ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  button { font-family: inherit; }
+
+  /* ---------- Cabinet: the sunburst wrapper from the pack ---------- */
+
+  .cab {
+    min-height: 100svh;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px;
+    gap: 10px;
+    background-color: var(--sun);
+    background-image:
+      radial-gradient(circle at 3px 3px, rgba(255,255,255,.34) 1.5px, transparent 1.7px),
+      repeating-conic-gradient(from 0deg at 50% 32%,
+        var(--sun-lt) 0deg 6.2deg, rgba(255,255,255,0) 6.2deg 12.4deg);
+    background-size: 14px 14px, 100% 100%;
+  }
+
+  .topbar {
+    width: 100%; max-width: var(--max);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+
+  .wordmark {
+    display: flex; align-items: center; gap: 9px;
+    font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; line-height: 1;
+    color: var(--red);
+    text-shadow: 1px 1px 0 var(--cream);
+  }
+  .wordmark b { color: var(--ink); font-weight: 800; }
+  .swirl { width: 28px; height: 28px; flex: none; display: block; image-rendering: pixelated; }
+
+  .stamps {
+    display: flex; align-items: center; gap: 8px;
+    font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink);
+  }
+  .pips { display: flex; gap: 4px; }
+  .pip {
+    width: 14px; height: 14px;
+    background: rgba(43,27,20,.16);
+    box-shadow: inset 0 0 0 2px var(--ink);
+    transition: background .2s;
+  }
+  .pip.on { background: var(--red); }
+
+  .viewport { width: 100%; max-width: var(--max); flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+  /* ---------- Hub ---------- */
+
+  .hub { display: flex; flex-direction: column; gap: 12px; }
+  .hub[hidden] { display: none; }
+
+  .banner {
+    position: relative; overflow: hidden;
+    padding: 18px 16px 20px;
+    background: var(--red);
+    border: 4px solid var(--ink);
+    box-shadow: 0 6px 0 rgba(43,27,20,.35);
+  }
+  .banner::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(-45deg, rgba(255,209,0,.22) 0 10px, transparent 10px 26px);
+  }
+  .banner h1 {
+    position: relative; margin: 0 0 6px;
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(1.7rem, 8vw, 2.3rem); line-height: .98;
+    color: var(--cream); text-wrap: balance;
+    text-shadow: 2px 2px 0 var(--red-dk);
+  }
+  .banner h1 em { font-style: normal; display: block; color: var(--sun); }
+  .banner p { position: relative; margin: 0; font-size: .85rem; line-height: 1.5; max-width: 34ch; color: rgba(255,248,231,.95); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .mission {
+    position: relative;
+    display: flex; flex-direction: column; gap: 7px;
+    padding: 11px 11px 13px; text-align: left;
+    background: var(--cream); color: var(--ink);
+    border: 3px solid var(--ink);
+    cursor: pointer;
+    box-shadow: 0 5px 0 rgba(43,27,20,.35);
+    transition: transform .1s, box-shadow .1s, background .2s;
+  }
+  .mission:hover { background: #FFFFFF; }
+  .mission:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(43,27,20,.35); }
+  .mission:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+  .mission canvas { width: 54px; height: 54px; image-rendering: pixelated; display: block; border: 2px solid var(--ink); }
+  .mission h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1rem; line-height: 1.1; }
+  .mission .goal { margin: 0; font-size: .73rem; line-height: 1.35; color: var(--ink-soft); }
+  .mission .done {
+    position: absolute; top: 8px; right: 8px;
+    width: 22px; height: 22px; background: var(--jade); color: var(--cream);
+    border: 2px solid var(--ink);
+    display: none; place-items: center; font-weight: 800; font-size: .78rem;
+  }
+  .mission.cleared .done { display: grid; }
+
+  .mission.locked { cursor: default; background: rgba(255,248,231,.5); border-style: dashed; box-shadow: none; }
+  .mission.locked:hover { background: rgba(255,248,231,.5); }
+  .mission.locked:active { transform: none; box-shadow: none; }
+  .mission.locked h2, .mission.locked .goal { color: rgba(107,83,68,.75); }
+  .mission.wide { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 11px; }
+  .mission.wide .txt { display: flex; flex-direction: column; gap: 3px; }
+
+  .reward {
+    display: flex; flex-direction: column; gap: 9px;
+    padding: 14px; background: var(--cream);
+    border: 3px solid var(--ink); box-shadow: 0 5px 0 rgba(43,27,20,.35);
+  }
+  .reward h3 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
+  .reward p { margin: 0; font-size: .78rem; line-height: 1.5; color: var(--ink-soft); }
+  .meter { height: 14px; background: #EADCC4; border: 2px solid var(--ink); overflow: hidden; }
+  .meter > i {
+    display: block; height: 100%;
+    background: repeating-linear-gradient(90deg, var(--red) 0 7px, var(--red-lt) 7px 11px);
+    transform-origin: left; transition: transform .35s;
+  }
+
+  .qrblock {
+    display: flex; gap: 13px; align-items: center; padding: 13px;
+    background: #FFFFFF; border: 3px solid var(--ink); box-shadow: 0 5px 0 rgba(43,27,20,.35);
+  }
+  .qrblock canvas { width: 104px; height: 104px; image-rendering: pixelated; flex: none; }
+  .qrtext { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .qrtext strong { font-family: var(--font-display); font-size: .98rem; line-height: 1.15; }
+  .qrtext span { font-size: .73rem; line-height: 1.42; color: var(--ink-soft); }
+  .qrurl {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .64rem; line-height: 1.3; color: #8A7566;
+    word-break: break-all; overflow-wrap: anywhere;
+  }
+  .qrtext button {
+    align-self: flex-start; margin-top: 3px;
+    background: var(--ink); color: var(--cream); border: none;
+    font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    padding: 7px 12px; cursor: pointer;
+  }
+  .qrtext button:hover { background: var(--red); }
+  .qrtext button:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+
+  /* ---------- Play ---------- */
+
+  .play { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+  .play[hidden] { display: none; }
+
+  .playbar { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; }
+  .back {
+    background: none; border: none; color: var(--ink); cursor: pointer;
+    font-size: .74rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 6px 2px;
+  }
+  .back:hover { color: var(--red); }
+  .back:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .playtitle { font-family: var(--font-display); font-weight: 700; font-size: .98rem; text-align: center; color: var(--ink); }
+  .statline {
+    text-align: right; font-family: var(--font-display); font-weight: 800; font-size: 1.3rem;
+    font-variant-numeric: tabular-nums; line-height: 1; color: var(--red);
+  }
+  .substat { font-size: .68rem; font-weight: 700; color: var(--ink-soft); text-align: right; letter-spacing: .06em; }
+
+  .stage {
+    position: relative; flex: 1; min-height: 320px; max-height: 620px;
+    overflow: hidden; background: #10202E;
+    border: 4px solid var(--ink);
+    box-shadow: 0 8px 0 rgba(43,27,20,.3);
+  }
+  #gameCanvas {
+    position: absolute; inset: 0; display: block; width: 100%; height: 100%;
+    object-fit: contain; image-rendering: pixelated; touch-action: none;
+  }
+
+  .ov {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    padding: 16px; overflow-y: auto;
+    background: rgba(43,27,20,.72);
+  }
+  .ov[hidden] { display: none; }
+
+  /* The instruction board: a candy-wrapper label pinned over the screen. */
+  /* Kept compact on purpose: the board must fit inside the shortest stage we
+     allow, so the Play button is never pushed out of view. */
+  .board {
+    width: min(310px, 100%);
+    background: var(--cream);
+    border: 4px solid var(--ink);
+    box-shadow: 0 7px 0 rgba(43,27,20,.45);
+    padding: 13px 13px 15px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    text-align: center;
+  }
+  .kicker { margin: 0; font-size: .64rem; font-weight: 700; letter-spacing: .17em; text-transform: uppercase; color: var(--red); }
+  .board h2 {
+    margin: 0; font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(1.35rem, 6.4vw, 1.7rem); line-height: 1; color: var(--ink); text-wrap: balance;
+  }
+
+  .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; width: 100%; }
+  .legend li { display: flex; align-items: center; gap: 9px; text-align: left; }
+  .legend canvas { width: 30px; height: 30px; flex: none; image-rendering: pixelated; border: 2px solid var(--ink); background: #FFF; }
+  .legend span { font-size: .75rem; line-height: 1.3; color: var(--ink); }
+
+  .ctl { margin: 0; font-size: .73rem; font-weight: 600; line-height: 1.38; color: var(--ink-soft); }
+  .goalchip {
+    margin: 0; background: var(--ink); color: var(--sun);
+    font-weight: 700; font-size: .69rem; letter-spacing: .05em; padding: 5px 11px;
+  }
+
+  .btn {
+    font-family: var(--font-display); font-weight: 800; font-size: 1.05rem;
+    color: var(--cream); background: var(--red); border: 3px solid var(--ink);
+    padding: 10px 34px; cursor: pointer; margin-top: 1px;
+    box-shadow: 0 5px 0 var(--red-dk);
+    transition: transform .1s, box-shadow .1s, background .2s;
+  }
+  .btn:hover { background: var(--red-lt); }
+  .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--red-dk); }
+  .btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+  .btn.ghost {
+    background: transparent; color: var(--ink-soft); box-shadow: none; border: 3px solid var(--ink-soft);
+    font-size: .9rem; padding: 8px 22px;
+  }
+  .btn.ghost:hover { background: rgba(43,27,20,.07); color: var(--ink); }
+  .btn.ghost:active { transform: none; }
+
+  .bignum {
+    font-family: var(--font-display); font-weight: 800; font-size: 2.7rem; line-height: 1;
+    color: var(--red); font-variant-numeric: tabular-nums;
+  }
+  .verdict { margin: 0; font-weight: 700; font-size: .88rem; }
+  .verdict.win { color: var(--jade); }
+  .verdict.lose { color: var(--ink-soft); }
+  .board .note { margin: 0; font-size: .78rem; line-height: 1.45; color: var(--ink-soft); }
+
+  .caption {
+    max-width: var(--max); width: 100%; font-size: .7rem; line-height: 1.5;
+    color: rgba(43,27,20,.62); text-align: center;
+  }
+
+  /* ---------- Notes ---------- */
+
+  .notes { background: var(--berry); border-top: 4px solid var(--ink); padding: 54px 20px 76px; color: var(--dim); }
+  .inner { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 26px; }
+  .notes h3 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; color: var(--cream); }
+  .notes h4 { margin: 0 0 10px; font-size: .66rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--sun); }
+  .notes p { margin: 0; font-size: .92rem; line-height: 1.65; color: var(--dim); max-width: 62ch; }
+  .notes p strong { color: var(--cream); }
+  .notes ul { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 7px; }
+  .notes li { font-size: .89rem; line-height: 1.55; color: var(--dim); }
+  .notes li strong { color: var(--cream); font-weight: 600; }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(236px, 1fr)); gap: 16px; }
+  .card { background: var(--berry-lt); box-shadow: inset 0 0 0 2px rgba(255,248,231,.12); padding: 18px; }
+  .scroll-x { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 470px; font-size: .86rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid rgba(255,248,231,.13); }
+  th { font-size: .64rem; letter-spacing: .12em; text-transform: uppercase; color: var(--sun); font-weight: 700; }
+  td { color: var(--dim); }
+  td:first-child { color: var(--cream); font-weight: 600; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .flag { font-weight: 700; }
+  .flag.ok { color: #4BD6A0; }
+  .flag.warn { color: var(--sun); }
+  .flag.bad { color: #FF7A93; }
+
+  @media (max-width: 380px) { .grid { grid-template-columns: 1fr; } .mission.wide { flex-direction: row; } }
+  /* Short viewports squeeze the stage to its minimum; squeeze the board too so
+     the Play button stays on screen. */
+  @media (max-height: 620px) {
+    .legend canvas { width: 26px; height: 26px; }
+    .legend span { font-size: .72rem; }
+    .board { gap: 7px; padding: 11px 12px 13px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; } }
+</style>
+
+<main class="cab">
+  <div class="topbar">
+    <div class="wordmark">
+      <canvas class="swirl" id="swirlMark" width="28" height="28"></canvas>
+      <span>CHUPA <b>ARCADE</b></span>
+    </div>
+    <div class="stamps">
+      <span>Tem</span>
+      <div class="pips" id="pips" aria-label="Tem đã thu thập"></div>
+    </div>
+  </div>
+
+  <div class="viewport">
+    <section class="hub" id="hub">
+      <div class="banner">
+        <h1>4 nhiệm vụ<em>1 hộp kẹo</em></h1>
+        <p>Quét mã, chơi thử, gom đủ tem đổi quà. Mỗi nhiệm vụ chỉ tốn của bạn một phút kẹt xe.</p>
+      </div>
+
+      <div class="grid" id="missionGrid"></div>
+
+      <div class="reward">
+        <h3>Đổi quà</h3>
+        <div class="meter"><i id="meterFill"></i></div>
+        <p id="rewardText">Hoàn thành mục tiêu của cả 4 nhiệm vụ để mở phần thưởng.</p>
+      </div>
+
+      <div class="qrblock">
+        <canvas id="qrCanvas" width="120" height="120" aria-label="Mã QR dẫn tới web game"></canvas>
+        <div class="qrtext">
+          <strong>Quét để chơi trên điện thoại</strong>
+          <span id="qrNote">Mã này trỏ thẳng vào trang bạn đang xem — đúng cách người dùng vào game từ bảng dán sau xe.</span>
+          <span class="qrurl" id="qrTarget"></span>
+          <button id="copyLink" type="button">Sao chép link</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="play" id="play" hidden>
+      <div class="playbar">
+        <button class="back" id="backBtn" type="button">‹ Nhiệm vụ</button>
+        <div class="playtitle" id="playTitle">—</div>
+        <div>
+          <div class="statline" id="statMain">0</div>
+          <div class="substat" id="statSub">ĐIỂM</div>
+        </div>
+      </div>
+
+      <div class="stage">
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="ov" id="ovStart">
+          <div class="board">
+            <p class="kicker" id="ovKicker">Nhiệm vụ</p>
+            <h2 id="ovTitle">—</h2>
+            <ul class="legend" id="ovLegend"></ul>
+            <p class="ctl" id="ovCtl">—</p>
+            <p class="goalchip" id="ovGoal">—</p>
+            <button class="btn" id="ovPlay" type="button">Chơi</button>
+          </div>
+        </div>
+
+        <div class="ov" id="ovEnd" hidden>
+          <div class="board">
+            <p class="kicker" id="endKicker">Kết quả</p>
+            <div class="bignum" id="endScore">0</div>
+            <p class="verdict" id="endVerdict">—</p>
+            <p class="note" id="endNote">—</p>
+            <button class="btn" id="endAgain" type="button">Chơi lại</button>
+            <button class="btn ghost" id="endBack" type="button">Về nhiệm vụ</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <p class="caption">Bản demo kỹ thuật. Màu và element dựng theo hệ đỏ–vàng và dải sản phẩm của Chupa Chups, nhưng chưa dùng bộ nhận diện chính thức; logo, font và tên vị kẹo cần client cấp.</p>
+</main>
+
+<section class="notes">
+  <div class="inner">
+    <h3>Đánh giá task sau khi mở rộng thành 5 nhiệm vụ</h3>
+    <p>Bản demo trên là <strong>4 mini-game chơi được thật</strong>, chạy trong trình duyệt điện thoại, không cài app, không backend. Nhiệm vụ thứ 5 để trống đúng như bạn đang cân nhắc.</p>
+    <p>Nói thẳng phần bạn cần biết: <strong>một mini-game thì nhẹ, bốn mini-game thì không.</strong> Công sức không cộng tuyến tính vì mỗi game là một hệ điều khiển, một bộ art và một vòng cân bằng độ khó riêng. Ước lượng thay đổi từ “vài ngày” thành “vài tuần”.</p>
+
+    <div class="scroll-x">
+      <table>
+        <thead>
+          <tr><th>Nhiệm vụ</th><th>Điều khiển</th><th class="num">Công sức bản thật</th><th>Rủi ro</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Chém Kẹo</td><td>Vuốt</td><td class="num">2–3 ngày</td><td class="flag ok">Thấp</td></tr>
+          <tr><td>Ghép Kẹo</td><td>Kéo đổi ô</td><td class="num">5–8 ngày</td><td class="flag bad">Cao — cân bằng độ khó và sinh bàn chơi được</td></tr>
+          <tr><td>Chạy Kẹo</td><td>Đổi làn, nhảy</td><td class="num">4–6 ngày</td><td class="flag warn">Vừa — dễ gây say xe</td></tr>
+          <tr><td>Landmark 81</td><td>Chạm</td><td class="num">2–3 ngày</td><td class="flag ok">Thấp</td></tr>
+          <tr><td>Vỏ hub + tem + QR</td><td>—</td><td class="num">3–4 ngày</td><td class="flag ok">Thấp</td></tr>
+          <tr><td>Pixel art toàn bộ</td><td>—</td><td class="num">6–10 ngày</td><td class="flag bad">Cao — cần hoạ sĩ pixel, không phải dev</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Cộng lại: <strong>khoảng 4–6 tuần</strong> cho một dev cộng một hoạ sĩ pixel, chưa tính vòng duyệt của client. Vẫn khả thi, nhưng đây là một dự án nhỏ chứ không còn là một cái mockup.</p>
+
+    <div class="cols">
+      <div class="card">
+        <h4>Nếu cần gọn lại</h4>
+        <ul>
+          <li>Giữ <strong>2 game</strong>: Chém Kẹo và Landmark 81. Rẻ nhất, rủi ro thấp nhất, vẫn đủ tạo cảm giác “có bộ sưu tập”.</li>
+          <li>Ba nhiệm vụ còn lại để dạng <strong>“mở khoá theo tuần”</strong> — vừa giảm tải, vừa tạo lý do quay lại.</li>
+          <li>Ghép Kẹo là món đắt nhất. Nếu phải cắt một, cắt món này trước.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Chưa làm, và nên nằm ngoài scope demo</h4>
+        <ul>
+          <li>Bảng xếp hạng chung — cần backend và chống gian lận</li>
+          <li>Tài khoản người dùng</li>
+          <li>Đổi thưởng thật — kéo theo thể lệ khuyến mại và pháp lý</li>
+          <li>Âm thanh</li>
+        </ul>
+      </div>
+    </div>
+
+    <div>
+      <h4>Bốn thứ quyết định thành bại, không nằm ở code</h4>
+      <ul>
+        <li><strong>Thưởng là thật hay ảo.</strong> Nếu quà có giá trị thật, đây thành chương trình khuyến mại: cần thể lệ, đăng ký, đối soát mã. Khối lượng đó lớn hơn cả phần game.</li>
+        <li><strong>QR in ra rồi không sửa được.</strong> Bắt buộc trỏ qua một link trung gian đổi hướng được, không trỏ thẳng vào link game.</li>
+        <li><strong>Say xe.</strong> Người chơi đang ngồi trên xe đang chạy. Game Chạy Kẹo là món rủi ro nhất; cần test thật trên xe trước khi chốt.</li>
+        <li><strong>Máy yếu và mạng chậm.</strong> Toàn bộ demo này vẽ bằng pixel ở độ phân giải thấp một phần cũng vì lý do đó — nền phức tạp đều được render sẵn một lần rồi blit, nên vẫn mượt trên Android tầm thấp.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  var QRGen = (function () {
+    var EXP = new Uint8Array(512), LOG = new Uint8Array(256);
+    (function () {
+      var x = 1;
+      for (var i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11D; }
+      for (var j = 255; j < 512; j++) EXP[j] = EXP[j - 255];
+    })();
+    function mul(a, b) { return (a === 0 || b === 0) ? 0 : EXP[LOG[a] + LOG[b]]; }
+
+    function genPoly(deg) {
+      var poly = [1];
+      for (var i = 0; i < deg; i++) {
+        var next = new Array(poly.length + 1);
+        for (var k = 0; k < next.length; k++) next[k] = 0;
+        for (var j = 0; j < poly.length; j++) {
+          next[j] ^= poly[j];
+          next[j + 1] ^= mul(poly[j], EXP[i]);
+        }
+        poly = next;
+      }
+      return poly;
+    }
+
+    function rsEncode(data, ecLen) {
+      var gen = genPoly(ecLen);
+      var res = data.slice();
+      for (var i = 0; i < ecLen; i++) res.push(0);
+      for (var d = 0; d < data.length; d++) {
+        var coef = res[d];
+        if (coef === 0) continue;
+        for (var j = 0; j < gen.length; j++) res[d + j] ^= mul(gen[j], coef);
+      }
+      return res.slice(data.length);
+    }
+
+    // [ecCodewordsPerBlock, [[blockCount, dataCodewords], ...]] for level M
+    var VER = {
+      1:  [10, [[1, 16]]],
+      2:  [16, [[1, 28]]],
+      3:  [26, [[1, 44]]],
+      4:  [18, [[2, 32]]],
+      5:  [24, [[2, 43]]],
+      6:  [16, [[4, 27]]],
+      7:  [18, [[4, 31]]],
+      8:  [22, [[2, 38], [2, 39]]],
+      9:  [22, [[3, 36], [2, 37]]],
+      10: [26, [[4, 43], [1, 44]]]
+    };
+    var ALIGN = {
+      2: [6, 18], 3: [6, 22], 4: [6, 26], 5: [6, 30], 6: [6, 34],
+      7: [6, 22, 38], 8: [6, 24, 42], 9: [6, 26, 46], 10: [6, 28, 50]
+    };
+
+    function utf8(str) {
+      var out = [];
+      for (var i = 0; i < str.length; i++) {
+        var c = str.charCodeAt(i);
+        if (c < 0x80) out.push(c);
+        else if (c < 0x800) { out.push(0xC0 | (c >> 6), 0x80 | (c & 63)); }
+        else if (c < 0xD800 || c >= 0xE000) { out.push(0xE0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63)); }
+        else {
+          i++;
+          var cp = 0x10000 + (((c & 0x3FF) << 10) | (str.charCodeAt(i) & 0x3FF));
+          out.push(0xF0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+        }
+      }
+      return out;
+    }
+
+    function bch15(data) {
+      var d = data << 10;
+      for (var i = 14; i >= 10; i--) if (d & (1 << i)) d ^= 0x537 << (i - 10);
+      return ((data << 10) | d) ^ 0x5412;
+    }
+
+    function penalty(t) {
+      var size = t.length, p = 0, r, c, i;
+      function runs(get) {
+        var n = 1;
+        for (i = 1; i < size; i++) {
+          if (get(i) === get(i - 1)) n++;
+          else { if (n >= 5) p += 3 + (n - 5); n = 1; }
+        }
+        if (n >= 5) p += 3 + (n - 5);
+      }
+      for (r = 0; r < size; r++) (function (rr) { runs(function (i2) { return t[rr][i2]; }); })(r);
+      for (c = 0; c < size; c++) (function (cc) { runs(function (i2) { return t[i2][cc]; }); })(c);
+
+      for (r = 0; r < size - 1; r++) for (c = 0; c < size - 1; c++) {
+        var v = t[r][c];
+        if (v === t[r][c + 1] && v === t[r + 1][c] && v === t[r + 1][c + 1]) p += 3;
+      }
+
+      var pat = [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0];
+      var pat2 = [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1];
+      function scan(get) {
+        for (var o = 0; o + 11 <= size; o++) {
+          var m1 = true, m2 = true;
+          for (var k = 0; k < 11; k++) {
+            var v2 = get(o + k);
+            if (v2 !== pat[k]) m1 = false;
+            if (v2 !== pat2[k]) m2 = false;
+          }
+          if (m1 || m2) p += 40;
+        }
+      }
+      for (r = 0; r < size; r++) (function (rr) { scan(function (i2) { return t[rr][i2]; }); })(r);
+      for (c = 0; c < size; c++) (function (cc) { scan(function (i2) { return t[i2][cc]; }); })(c);
+
+      var dark = 0;
+      for (r = 0; r < size; r++) for (c = 0; c < size; c++) dark += t[r][c];
+      p += Math.floor(Math.abs(dark * 100 / (size * size) - 50) / 5) * 10;
+      return p;
+    }
+
+    function maskAt(k, r, c) {
+      switch (k) {
+        case 0: return (r + c) % 2 === 0;
+        case 1: return r % 2 === 0;
+        case 2: return c % 3 === 0;
+        case 3: return (r + c) % 3 === 0;
+        case 4: return (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0;
+        case 5: return ((r * c) % 2) + ((r * c) % 3) === 0;
+        case 6: return ((((r * c) % 2) + ((r * c) % 3)) % 2) === 0;
+        default: return (((((r + c) % 2) + ((r * c) % 3))) % 2) === 0;
+      }
+    }
+
+    function build(text) {
+      var bytes = utf8(text), version = -1, cci = 8, capCw = 0, v, spec, total, i, j;
+
+      for (v = 1; v <= 10; v++) {
+        spec = VER[v];
+        total = 0;
+        for (i = 0; i < spec[1].length; i++) total += spec[1][i][0] * spec[1][i][1];
+        var cc = v < 10 ? 8 : 16;
+        if (4 + cc + bytes.length * 8 <= total * 8) { version = v; cci = cc; capCw = total; break; }
+      }
+      if (version < 0) return null;
+
+      var bits = [];
+      function put(val, len) { for (var b = len - 1; b >= 0; b--) bits.push((val >>> b) & 1); }
+      put(4, 4);
+      put(bytes.length, cci);
+      for (i = 0; i < bytes.length; i++) put(bytes[i], 8);
+      var capBits = capCw * 8;
+      put(0, Math.min(4, capBits - bits.length));
+      while (bits.length % 8) bits.push(0);
+      var pads = [0xEC, 0x11], pi = 0;
+      while (bits.length < capBits) put(pads[pi++ % 2], 8);
+
+      var dataCw = [];
+      for (i = 0; i < bits.length; i += 8) {
+        var byteVal = 0;
+        for (j = 0; j < 8; j++) byteVal = (byteVal << 1) | bits[i + j];
+        dataCw.push(byteVal);
+      }
+
+      var ecLen = VER[version][0], blocks = [], ecBlocks = [], off = 0;
+      VER[version][1].forEach(function (sp) {
+        for (var n = 0; n < sp[0]; n++) {
+          var chunk = dataCw.slice(off, off + sp[1]);
+          off += sp[1];
+          blocks.push(chunk);
+          ecBlocks.push(rsEncode(chunk, ecLen));
+        }
+      });
+
+      var out = [], maxLen = 0;
+      blocks.forEach(function (b) { if (b.length > maxLen) maxLen = b.length; });
+      for (i = 0; i < maxLen; i++) blocks.forEach(function (b) { if (i < b.length) out.push(b[i]); });
+      for (i = 0; i < ecLen; i++) ecBlocks.forEach(function (b) { out.push(b[i]); });
+
+      var size = version * 4 + 17;
+      var m = [], res = [];
+      for (i = 0; i < size; i++) {
+        m.push(new Array(size).fill(0));
+        res.push(new Array(size).fill(0));
+      }
+      function setF(r, c, val) { if (r < 0 || c < 0 || r >= size || c >= size) return; m[r][c] = val; res[r][c] = 1; }
+
+      function finder(r0, c0) {
+        for (var r = -1; r <= 7; r++) for (var c = -1; c <= 7; c++) {
+          var on = (r >= 0 && r <= 6 && (c === 0 || c === 6)) ||
+                   (c >= 0 && c <= 6 && (r === 0 || r === 6)) ||
+                   (r >= 2 && r <= 4 && c >= 2 && c <= 4);
+          setF(r0 + r, c0 + c, on ? 1 : 0);
+        }
+      }
+      finder(0, 0); finder(0, size - 7); finder(size - 7, 0);
+
+      for (i = 8; i < size - 8; i++) { var tv = (i % 2 === 0) ? 1 : 0; setF(6, i, tv); setF(i, 6, tv); }
+
+      if (version >= 2) {
+        var cs = ALIGN[version];
+        for (i = 0; i < cs.length; i++) for (j = 0; j < cs.length; j++) {
+          var ar = cs[i], ac = cs[j];
+          if ((ar <= 8 && ac <= 8) || (ar <= 8 && ac >= size - 9) || (ar >= size - 9 && ac <= 8)) continue;
+          for (var dr = -2; dr <= 2; dr++) for (var dc = -2; dc <= 2; dc++) {
+            setF(ar + dr, ac + dc, Math.max(Math.abs(dr), Math.abs(dc)) !== 1 ? 1 : 0);
+          }
+        }
+      }
+
+      // Reserve format and version areas before the data walk.
+      for (i = 0; i <= 8; i++) { if (!res[8][i]) setF(8, i, 0); if (!res[i][8]) setF(i, 8, 0); }
+      for (i = 0; i < 8; i++) { if (!res[8][size - 1 - i]) setF(8, size - 1 - i, 0); if (!res[size - 1 - i][8]) setF(size - 1 - i, 8, 0); }
+      setF(size - 8, 8, 1);
+      if (version >= 7) {
+        for (i = 0; i < 6; i++) for (j = 0; j < 3; j++) { setF(i, size - 11 + j, 0); setF(size - 11 + j, i, 0); }
+      }
+
+      var idx = 0, bit = 0, upward = true;
+      for (var col = size - 1; col > 0; col -= 2) {
+        if (col === 6) col--;
+        for (var t = 0; t < size; t++) {
+          for (var s = 0; s < 2; s++) {
+            var cc2 = col - s;
+            var rr2 = upward ? size - 1 - t : t;
+            if (res[rr2][cc2]) continue;
+            var b2 = 0;
+            if (idx < out.length) {
+              b2 = (out[idx] >>> (7 - bit)) & 1;
+              if (++bit === 8) { bit = 0; idx++; }
+            }
+            m[rr2][cc2] = b2;
+          }
+        }
+        upward = !upward;
+      }
+
+      function applyFormat(t2, k) {
+        var f = bch15((0 << 3) | k); // level M => 00
+        function g(n) { return (f >>> n) & 1; }
+        for (var i2 = 0; i2 <= 5; i2++) t2[i2][8] = g(i2);
+        t2[7][8] = g(6);
+        t2[8][8] = g(7);
+        t2[8][7] = g(8);
+        for (i2 = 9; i2 < 15; i2++) t2[8][14 - i2] = g(i2);
+        for (i2 = 0; i2 < 8; i2++) t2[8][size - 1 - i2] = g(i2);
+        for (i2 = 8; i2 < 15; i2++) t2[size - 15 + i2][8] = g(i2);
+        t2[size - 8][8] = 1;
+      }
+
+      function applyVersion(t2, ver) {
+        var rem = ver;
+        for (var i2 = 0; i2 < 12; i2++) rem = (rem << 1) ^ (((rem >>> 11) & 1) ? 0x1F25 : 0);
+        var vb = (ver << 12) | rem;
+        for (i2 = 0; i2 < 18; i2++) {
+          var b3 = (vb >>> i2) & 1;
+          var a = size - 11 + (i2 % 3), b4 = Math.floor(i2 / 3);
+          t2[b4][a] = b3;
+          t2[a][b4] = b3;
+        }
+      }
+
+      var best = null, bestPen = Infinity;
+      for (var k2 = 0; k2 < 8; k2++) {
+        var t3 = m.map(function (row) { return row.slice(); });
+        for (var r3 = 0; r3 < size; r3++) for (var c3 = 0; c3 < size; c3++) {
+          if (!res[r3][c3] && maskAt(k2, r3, c3)) t3[r3][c3] ^= 1;
+        }
+        applyFormat(t3, k2);
+        if (version >= 7) applyVersion(t3, version);
+        var pen = penalty(t3);
+        if (pen < bestPen) { bestPen = pen; best = t3; }
+      }
+      return best;
+    }
+
+    return { build: build };
+  })();
+
+  /* =========================================================
+     Pixel art. Everything renders into a 160x284 backing store
+     and is scaled up with nearest-neighbour, so the art is real
+     pixel art rather than a filter.
+     ========================================================= */
+
+  var BW = 160, BH = 284;
+
+  var P = {
+    red: "#E4002B", redDk: "#A80020", redLt: "#FF3355",
+    sun: "#FFD100", sunLt: "#FFE95C", sunDk: "#E0B400",
+    cream: "#FFF8E7", white: "#FFFFFF",
+    ink: "#2B1B14", inkSoft: "#6B5344",
+    straw: "#FF2D55", orange: "#FF8A1E", lemon: "#FFD60A",
+    lime: "#3ECF4C", aqua: "#2FB8E8", grape: "#A65BE0",
+    pink: "#FF6FB5", pinkLt: "#FFB3DA", pinkPale: "#FFDCEE",
+    sky: "#56C8F5", skyLt: "#8FDCFF", skyDk: "#2C9BD1",
+    grass: "#7ED957", grassDk: "#4FB233",
+    cola: "#A9622F", colaDk: "#6E3D18",
+    mud: "#6B5A5A", mudDk: "#463A3A"
+  };
+
+  var FLAVOURS = [P.straw, P.orange, P.lemon, P.lime, P.aqua, P.grape];
+
+  function rect(c, x, y, w, h, col) { c.fillStyle = col; c.fillRect(x | 0, y | 0, w | 0, h | 0); }
+
+  function disc(c, cx, cy, r, col) {
+    c.fillStyle = col;
+    for (var dy = -r; dy <= r; dy++) {
+      var dx = Math.floor(Math.sqrt(r * r - dy * dy));
+      c.fillRect((cx - dx) | 0, (cy + dy) | 0, (dx * 2 + 1) | 0, 1);
+    }
+  }
+
+  function discOutline(c, cx, cy, r, col) {
+    c.fillStyle = col;
+    for (var a = 0; a < 360; a += 4) {
+      var rad = a * Math.PI / 180;
+      c.fillRect(Math.round(cx + Math.cos(rad) * r), Math.round(cy + Math.sin(rad) * r), 1, 1);
+    }
+  }
+
+  function swirl(c, cx, cy, r, col, phase) {
+    c.fillStyle = col;
+    var turns = Math.PI * 2 * 2.6;
+    for (var a = 0.3; a <= turns; a += 0.11) {
+      var rr = (a / turns) * r * 0.78, ang = a + (phase || 0);
+      c.fillRect(Math.round(cx + Math.cos(ang) * rr), Math.round(cy + Math.sin(ang) * rr), 1, 1);
+    }
+  }
+
+  function hexToRgb(h) {
+    h = h.replace("#", "");
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+  function shade(hex, amt) {
+    var v = hexToRgb(hex);
+    function f(n) { return Math.max(0, Math.min(255, Math.round(amt < 0 ? n * (1 + amt) : n + (255 - n) * amt))); }
+    return "rgb(" + f(v[0]) + "," + f(v[1]) + "," + f(v[2]) + ")";
+  }
+
+  /* ---------- the product range, drawn as sprites ---------- */
+
+  function sLolly(c, cx, cy, col, phase) {
+    rect(c, cx - 1, cy + 7, 2, 9, "#F2E3C4");
+    rect(c, cx - 2, cy + 15, 4, 1, P.ink);
+    disc(c, cx, cy, 8, col);
+    discOutline(c, cx, cy, 8, P.ink);
+    swirl(c, cx, cy, 8, P.cream, phase || 0);
+    rect(c, cx - 4, cy - 4, 2, 2, P.white);
+  }
+
+  function sBear(c, cx, cy, col) {
+    var dk = shade(col, -0.45), lt = shade(col, 0.4);
+    rect(c, cx - 7, cy - 9, 4, 4, col);
+    rect(c, cx + 3, cy - 9, 4, 4, col);
+    rect(c, cx - 5, cy - 8, 10, 7, col);
+    rect(c, cx - 6, cy - 2, 12, 8, col);
+    rect(c, cx - 8, cy - 1, 2, 5, col);
+    rect(c, cx + 6, cy - 1, 2, 5, col);
+    rect(c, cx - 6, cy + 6, 5, 3, col);
+    rect(c, cx + 1, cy + 6, 5, 3, col);
+    rect(c, cx - 3, cy - 6, 2, 2, dk);
+    rect(c, cx + 1, cy - 6, 2, 2, dk);
+    rect(c, cx - 1, cy - 3, 2, 1, dk);
+    rect(c, cx - 4, cy, 2, 4, lt);
+  }
+
+  function sCola(c, cx, cy) {
+    rect(c, cx - 2, cy - 10, 4, 2, shade(P.cola, 0.5));
+    rect(c, cx - 2, cy - 8, 4, 3, shade(P.cola, 0.32));
+    rect(c, cx - 4, cy - 5, 8, 3, shade(P.cola, 0.16));
+    rect(c, cx - 5, cy - 2, 10, 9, P.cola);
+    rect(c, cx - 5, cy + 5, 10, 2, P.colaDk);
+    rect(c, cx - 3, cy - 1, 2, 6, "rgba(255,255,255,.34)");
+  }
+
+  // Rainbow sour belt, sugar-crusted, with the black edge from the pack art.
+  function sBelt(c, cx, cy) {
+    var cols = [P.straw, P.orange, P.lemon, P.lime, P.aqua];
+    rect(c, cx - 9, cy - 8, 18, 16, P.ink);
+    for (var i = 0; i < 5; i++) rect(c, cx - 8, cy - 7 + i * 3, 16, 3, cols[i]);
+    for (var s = 0; s < 8; s++) rect(c, cx - 7 + (s * 5) % 15, cy - 6 + (s * 7) % 13, 1, 1, "rgba(255,255,255,.65)");
+  }
+
+  // Sour tube seen end-on: sugared shell, pale filling.
+  function sTube(c, cx, cy, col) {
+    rect(c, cx - 8, cy - 6, 16, 12, P.ink);
+    rect(c, cx - 7, cy - 5, 14, 10, col);
+    rect(c, cx - 7, cy - 5, 14, 2, shade(col, 0.42));
+    disc(c, cx + 4, cy, 4, P.cream);
+    discOutline(c, cx + 4, cy, 4, P.ink);
+    for (var s = 0; s < 7; s++) rect(c, cx - 6 + (s * 4) % 11, cy - 4 + (s * 5) % 9, 1, 1, "rgba(255,255,255,.7)");
+  }
+
+  function sMint(c, cx, cy, col) {
+    disc(c, cx, cy, 8, P.cream);
+    discOutline(c, cx, cy, 8, P.ink);
+    for (var a = 0; a < 6; a++) {
+      var ang = a * Math.PI / 3;
+      for (var t = 2; t <= 7; t++) {
+        rect(c, Math.round(cx + Math.cos(ang + t * 0.13) * t), Math.round(cy + Math.sin(ang + t * 0.13) * t), 1, 1, col);
+      }
+    }
+  }
+
+  // The tooth-decay monster: the one thing in the game you must not slice.
+  function sMonster(c, cx, cy, ph) {
+    var g1 = "#3FA82A", g2 = "#7BD44A", g3 = "#22691A";
+    var bob = Math.round(Math.sin((ph || 0) * 2) * 1);
+    cy += bob;
+    rect(c, cx - 9, cy - 10, 2, 4, g3);
+    rect(c, cx - 4, cy - 13, 2, 5, g3);
+    rect(c, cx + 1, cy - 13, 2, 5, g3);
+    rect(c, cx + 6, cy - 10, 2, 4, g3);
+    disc(c, cx, cy - 1, 9, g1);
+    discOutline(c, cx, cy - 1, 9, P.ink);
+    rect(c, cx - 6, cy - 9, 12, 3, g2);
+    rect(c, cx - 12, cy + 1, 4, 2, g1);
+    rect(c, cx + 8, cy + 1, 4, 2, g1);
+    rect(c, cx - 12, cy + 1, 4, 1, P.ink);
+    rect(c, cx + 8, cy + 1, 4, 1, P.ink);
+    rect(c, cx - 7, cy - 5, 6, 4, P.lemon);
+    rect(c, cx + 1, cy - 5, 6, 4, P.lemon);
+    rect(c, cx - 5, cy - 4, 2, 2, "#E01B1B");
+    rect(c, cx + 3, cy - 4, 2, 2, "#E01B1B");
+    rect(c, cx - 8, cy - 6, 6, 1, P.ink);
+    rect(c, cx + 2, cy - 6, 6, 1, P.ink);
+    rect(c, cx - 7, cy + 2, 14, 5, P.ink);
+    for (var i = 0; i < 5; i++) rect(c, cx - 6 + i * 3, cy + 2, 2, 2, P.cream);
+    for (var j = 0; j < 4; j++) rect(c, cx - 4 + j * 3, cy + 5, 2, 2, P.cream);
+  }
+
+  // A 3x5 pixel font, so score pops stay in the same idiom as the sprites.
+  var GLYPH = {
+    "0": ["111","101","101","101","111"], "1": ["010","110","010","010","111"],
+    "2": ["111","001","111","100","111"], "3": ["111","001","111","001","111"],
+    "4": ["101","101","111","001","001"], "5": ["111","100","111","001","111"],
+    "6": ["111","100","111","101","111"], "7": ["111","001","010","010","010"],
+    "8": ["111","101","111","101","111"], "9": ["111","101","111","001","111"],
+    "+": ["000","010","111","010","000"], "x": ["000","101","010","101","000"],
+    " ": ["000","000","000","000","000"]
+  };
+  function pxText(c, str, cx, y, col, sc) {
+    sc = sc || 1;
+    var x0 = Math.round(cx - (str.length * 4 * sc - sc) / 2);
+    for (var i = 0; i < str.length; i++) {
+      var g = GLYPH[str.charAt(i)] || GLYPH[" "];
+      for (var r = 0; r < 5; r++) for (var k = 0; k < 3; k++) {
+        if (g[r].charAt(k) === "1") rect(c, x0 + i * 4 * sc + k * sc, y + r * sc, sc, sc, col);
+      }
+    }
+  }
+
+  var CANDY = {
+    lolly: sLolly, bear: sBear, cola: function (c, x, y) { sCola(c, x, y); },
+    belt: function (c, x, y) { sBelt(c, x, y); }, tube: sTube, mint: sMint
+  };
+  var KINDS = ["lolly", "bear", "cola", "belt", "tube", "mint"];
+
+  function drawCandy(c, kind, x, y, col, phase) {
+    if (kind === "cola" || kind === "belt") CANDY[kind](c, x, y);
+    else CANDY[kind](c, x, y, col, phase);
+  }
+
+  /* ---------- backgrounds, rasterised once ---------- */
+
+  function offscreen(w, h) {
+    var o = document.createElement("canvas");
+    o.width = w; o.height = h;
+    var g = o.getContext("2d");
+    g.imageSmoothingEnabled = false;
+    return { cv: o, g: g };
+  }
+
+  // Sunburst off the pack art, but in brand red: the page ground is already
+  // the yellow burst, so the play field needs its own colour to read as a screen.
+  var bgSun = (function () {
+    var o = offscreen(BW, BH), g = o.g;
+    var img = g.createImageData(BW, BH), d = img.data;
+    var a = hexToRgb("#E4002B"), b = hexToRgb("#FF2E52");
+    var cx = BW / 2, cy = BH * 0.42;
+    for (var y = 0; y < BH; y++) for (var x = 0; x < BW; x++) {
+      var ang = Math.atan2(y - cy, x - cx);
+      var k = Math.floor(((ang + Math.PI) / (Math.PI * 2)) * 28) % 2;
+      var col = k ? b : a, i = (y * BW + x) * 4;
+      d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    for (var row = 0; row * 8 < BH; row++) {
+      for (var xx = (row % 2 ? 4 : 0); xx < BW; xx += 8) rect(g, xx, row * 8 + 2, 2, 2, "rgba(255,209,0,.30)");
+    }
+    return o.cv;
+  })();
+
+  // Candy-land sky: banded blue, a rainbow arc, chunky clouds.
+  var bgSky = (function () {
+    var o = offscreen(BW, BH), g = o.g;
+    var bands = [hexToRgb("#8FDCFF"), hexToRgb("#6FD2FA"), hexToRgb("#56C8F5"), hexToRgb("#3FB6E9")];
+    var arc = [hexToRgb("#FF2D55"), hexToRgb("#FF8A1E"), hexToRgb("#FFD60A"), hexToRgb("#3ECF4C"), hexToRgb("#2FB8E8"), hexToRgb("#A65BE0")];
+    var img = g.createImageData(BW, BH), d = img.data;
+    var ax = BW * 0.5, ay = BH * 0.94;
+    for (var y = 0; y < BH; y++) for (var x = 0; x < BW; x++) {
+      var col = bands[Math.min(bands.length - 1, Math.floor(y / BH * bands.length))];
+      var dx = x - ax, dy = y - ay;
+      if (dy < 0) {
+        var band = Math.floor((Math.sqrt(dx * dx + dy * dy) - 96) / 4);
+        if (band >= 0 && band < 6) col = arc[band];
+      }
+      var i = (y * BW + x) * 4;
+      d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    var puffs = [[18, 30], [104, 18], [64, 62], [130, 74], [30, 96]];
+    for (var p = 0; p < puffs.length; p++) {
+      var px = puffs[p][0], py = puffs[p][1];
+      rect(g, px, py, 22, 6, P.white);
+      rect(g, px + 5, py - 4, 12, 5, P.white);
+      rect(g, px + 3, py + 6, 16, 2, "rgba(220,240,255,.9)");
+    }
+    return o.cv;
+  })();
+
+  // One tileable strip of candy-land verge, blitted down both sides of the road.
+  var SIDE_W = 22, SIDE_H = 96;
+  var tileSide = (function () {
+    var o = offscreen(SIDE_W, SIDE_H), g = o.g;
+    rect(g, 0, 0, SIDE_W, SIDE_H, P.grass);
+    for (var s = 0; s < 40; s++) rect(g, (s * 7) % SIDE_W, (s * 11) % SIDE_H, 2, 1, P.grassDk);
+    // lollipop tree
+    rect(g, 10, 20, 2, 12, "#8A5A2B");
+    disc(g, 11, 15, 8, P.pink);
+    discOutline(g, 11, 15, 8, P.ink);
+    swirl(g, 11, 15, 8, P.cream, 0);
+    // candy bush
+    disc(g, 7, 58, 6, P.grape);
+    discOutline(g, 7, 58, 6, P.ink);
+    rect(g, 12, 74, 8, 8, P.lemon);
+    rect(g, 12, 74, 8, 8, "rgba(0,0,0,0)");
+    rect(g, 12, 74, 8, 2, shade(P.lemon, 0.4));
+    for (var e = 0; e < 4; e++) rect(g, 12 + e * 2, 74, 1, 8, "rgba(43,27,20,.18)");
+    return o.cv;
+  })();
+
+  /* =========================================================
+     Shell
+     ========================================================= */
+
+  var canvas = document.getElementById("gameCanvas");
+  var ctx = canvas.getContext("2d");
+  canvas.width = BW; canvas.height = BH;
+  ctx.imageSmoothingEnabled = false;
+
+  var hubEl = document.getElementById("hub");
+  var playEl = document.getElementById("play");
+  var gridEl = document.getElementById("missionGrid");
+  var pipsEl = document.getElementById("pips");
+  var meterFill = document.getElementById("meterFill");
+  var rewardText = document.getElementById("rewardText");
+  var playTitle = document.getElementById("playTitle");
+  var statMain = document.getElementById("statMain");
+  var statSub = document.getElementById("statSub");
+  var ovStart = document.getElementById("ovStart");
+  var ovEnd = document.getElementById("ovEnd");
+  var ovTitle = document.getElementById("ovTitle");
+  var ovLegend = document.getElementById("ovLegend");
+  var ovCtl = document.getElementById("ovCtl");
+  var ovGoal = document.getElementById("ovGoal");
+  var ovKicker = document.getElementById("ovKicker");
+  var endScore = document.getElementById("endScore");
+  var endVerdict = document.getElementById("endVerdict");
+  var endNote = document.getElementById("endNote");
+
+  var cleared = {};
+  try { cleared = JSON.parse(localStorage.getItem("chupa.cleared") || "{}") || {}; } catch (e) { cleared = {}; }
+  function saveCleared() { try { localStorage.setItem("chupa.cleared", JSON.stringify(cleared)); } catch (e) {} }
+
+  var active = null, running = false, lastT = 0;
+
+  /* =========================================================
+     Game 1 — Chém Kẹo
+     ========================================================= */
+
+  var slice = {
+    id: "slice",
+    name: "Chém Kẹo",
+    goal: 18,
+    goalText: "Chém 18 viên trong 30 giây",
+    control: "Vuốt ngón tay ngang qua kẹo đang bay lên.",
+    unit: "ĐIỂM",
+    subInit: "30S · 3 MẠNG",
+    items: [], bits: [], trail: [], lives: 3, t: 0, score: 0, spawnT: 0, prev: null, down: false,
+
+    legend: [
+      { icon: function (g) { sBear(g, 10, 18, P.lime); sLolly(g, 26, 14, P.straw, 1); }, text: "Chém mọi loại kẹo · mỗi viên 1 điểm" },
+      { icon: function (g) { sMonster(g, 18, 19, 0); }, text: "Quỷ sâu răng · chém trúng là mất 1 mạng" }
+    ],
+
+    icon: function (c) {
+      c.drawImage(bgSun, 0, 0, 26, 26, 0, 0, 26, 26);
+      sLolly(c, 9, 11, P.straw, 0);
+      sBear(c, 19, 16, P.lime);
+      c.fillStyle = P.cream;
+      for (var i = 0; i < 20; i++) c.fillRect(2 + i, 22 - i, 1, 1);
+    },
+
+    reset: function () {
+      this.items = []; this.bits = []; this.trail = [];
+      this.lives = 3; this.t = 30; this.score = 0; this.spawnT = 0.3;
+      this.prev = null; this.down = false;
+    },
+
+    spawn: function () {
+      var bomb = Math.random() < 0.2;
+      var x = 26 + Math.random() * (BW - 52);
+      var rise = BH * (0.6 + Math.random() * 0.25), g = 340;
+      var vy = -Math.sqrt(2 * g * rise), flight = (-vy / g) * 2;
+      this.items.push({
+        x: x, y: BH + 14, vx: ((BW / 2 + (Math.random() - 0.5) * 70) - x) / flight, vy: vy,
+        r: 9, bomb: bomb,
+        kind: KINDS[(Math.random() * KINDS.length) | 0],
+        col: FLAVOURS[(Math.random() * FLAVOURS.length) | 0],
+        ph: Math.random() * 6
+      });
+    },
+
+    pointer: function (kind, x, y) {
+      if (kind === "down") { this.down = true; this.prev = { x: x, y: y }; this.trail = [{ x: x, y: y }]; return; }
+      if (kind === "up") { this.down = false; this.prev = null; return; }
+      if (!this.down || !this.prev) return;
+      this.trail.push({ x: x, y: y });
+      if (this.trail.length > 10) this.trail.shift();
+      var dx = x - this.prev.x, dy = y - this.prev.y;
+      if (dx * dx + dy * dy > 9) {
+        for (var i = this.items.length - 1; i >= 0; i--) {
+          if (this.segHit(this.items[i], this.prev.x, this.prev.y, x, y)) {
+            this.cut(this.items.splice(i, 1)[0], Math.atan2(dy, dx));
+          }
+        }
+      }
+      this.prev = { x: x, y: y };
+    },
+
+    segHit: function (o, ax, ay, bx, by) {
+      var dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+      var t = l2 ? ((o.x - ax) * dx + (o.y - ay) * dy) / l2 : 0;
+      t = t < 0 ? 0 : t > 1 ? 1 : t;
+      var ex = o.x - (ax + dx * t), ey = o.y - (ay + dy * t);
+      return ex * ex + ey * ey <= (o.r + 3) * (o.r + 3);
+    },
+
+    cut: function (o, ang) {
+      if (o.bomb) {
+        this.lives--;
+        this.burst(o.x, o.y, P.mud, 10);
+        if (this.lives <= 0) finishRun(this.score);
+        return;
+      }
+      this.score++;
+      statMain.textContent = this.score;
+      this.burst(o.x, o.y, o.col, 9);
+      var perp = ang + Math.PI / 2;
+      for (var s = -1; s <= 1; s += 2) {
+        this.bits.push({
+          x: o.x, y: o.y,
+          vx: o.vx * 0.5 + Math.cos(perp) * 40 * s, vy: o.vy * 0.5 + Math.sin(perp) * 40 * s - 20,
+          r: o.r, col: o.col, kind: o.kind, life: 1.1, half: s
+        });
+      }
+    },
+
+    burst: function (x, y, col, n) {
+      for (var i = 0; i < n; i++) {
+        var a = Math.random() * Math.PI * 2, v = 20 + Math.random() * 60;
+        this.bits.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 15, r: 0, col: col, life: 0.5, half: 0 });
+      }
+    },
+
+    step: function (dt) {
+      var i, o;
+      this.t -= dt;
+      if (this.t <= 0) { this.t = 0; finishRun(this.score); return; }
+      statSub.textContent = Math.ceil(this.t) + "S · " + this.lives + " MẠNG";
+
+      this.spawnT -= dt;
+      if (this.spawnT <= 0) {
+        var n = 1 + ((Math.random() * 2) | 0);
+        for (i = 0; i < n; i++) this.spawn();
+        this.spawnT = 0.75 + Math.random() * 0.5;
+      }
+      for (i = this.items.length - 1; i >= 0; i--) {
+        o = this.items[i];
+        o.vy += 340 * dt; o.x += o.vx * dt; o.y += o.vy * dt; o.ph += dt * 2;
+        if (o.y - o.r > BH + 24) this.items.splice(i, 1);
+      }
+      for (i = this.bits.length - 1; i >= 0; i--) {
+        o = this.bits[i];
+        o.vy += 340 * dt; o.x += o.vx * dt; o.y += o.vy * dt; o.life -= dt;
+        if (o.life <= 0) this.bits.splice(i, 1);
+      }
+      for (i = this.trail.length - 1; i >= 0; i--) if (Math.random() < dt * 8) this.trail.splice(i, 1);
+    },
+
+    draw: function (c) {
+      c.drawImage(bgSun, 0, 0);
+      var i, o;
+      for (i = 0; i < this.bits.length; i++) {
+        o = this.bits[i];
+        if (o.r === 0) { rect(c, o.x, o.y, 2, 2, o.col); continue; }
+        c.save();
+        c.beginPath();
+        c.rect(o.x - 12, o.half > 0 ? o.y : o.y - 12, 24, 12);
+        c.clip();
+        drawCandy(c, o.kind, o.x, o.y, o.col, 0);
+        c.restore();
+      }
+      for (i = 0; i < this.items.length; i++) {
+        o = this.items[i];
+        if (o.bomb) sMonster(c, o.x, o.y, o.ph);
+        else drawCandy(c, o.kind, o.x, o.y, o.col, o.ph);
+      }
+      for (i = 1; i < this.trail.length; i++) {
+        var a = this.trail[i - 1], b = this.trail[i];
+        var steps = Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y)) | 0;
+        for (var k = 0; k <= steps; k++) {
+          var tt = steps ? k / steps : 0;
+          rect(c, a.x + (b.x - a.x) * tt, a.y + (b.y - a.y) * tt, 2, 2, P.cream);
+          rect(c, a.x + (b.x - a.x) * tt, a.y + (b.y - a.y) * tt - 2, 1, 1, P.red);
+        }
+      }
+    }
+  };
+
+  /* =========================================================
+     Game 2 — Ghép Kẹo
+     ========================================================= */
+
+  var TILE_COL = [P.straw, P.lime, P.cola, P.aqua, P.aqua, P.pink];
+
+  var match = {
+    id: "match",
+    name: "Ghép Kẹo",
+    goal: 1900,
+    goalText: "Đạt 1900 điểm trong 22 lượt",
+    control: "Chạm để chọn, rồi vuốt sang ô bên cạnh.",
+    unit: "ĐIỂM",
+    subInit: "22 LƯỢT",
+    COLS: 7, ROWS: 9, CELL: 20, OX: 10, OY: 75,
+
+    board: [], score: 0, moves: 22, ended: false,
+    // idle -> swap -> (swapback | clear -> fall -> clear ...) -> idle
+    phase: "idle", anim: 0, chain: 0,
+    swapA: null, swapB: null,
+    sel: null, dragFrom: null,
+    sparks: [], pops: [], glow: 0,
+
+    legend: [
+      { icon: function (g) { sBear(g, 8, 18, P.lime); sBear(g, 18, 18, P.lime); sBear(g, 28, 18, P.lime); },
+        text: "Xếp 3 viên cùng loại thành hàng" },
+      { icon: function (g) { sBelt(g, 18, 11); sTube(g, 18, 26, P.aqua); },
+        text: "Nổ dây chuyền càng dài, điểm càng nhân" }
+    ],
+
+    icon: function (c) {
+      rect(c, 0, 0, 26, 26, P.pinkPale);
+      sBear(c, 8, 8, P.lime);
+      sMint(c, 19, 8, P.pink);
+      sCola(c, 8, 19);
+      sTube(c, 18, 19, P.aqua);
+    },
+
+    reset: function () {
+      this.score = 0; this.moves = 22; this.ended = false;
+      this.phase = "idle"; this.anim = 0; this.chain = 0;
+      this.sel = null; this.dragFrom = null;
+      this.swapA = null; this.swapB = null;
+      this.sparks = []; this.pops = []; this.glow = 0;
+      this.board = [];
+      for (var r = 0; r < this.ROWS; r++) {
+        this.board.push([]);
+        for (var c = 0; c < this.COLS; c++) this.board[r].push(this.freshTile());
+      }
+      var guard = 0;
+      while (this.findMatches().length && guard++ < 80) {
+        var ms = this.findMatches();
+        for (var i = 0; i < ms.length; i++) this.board[ms[i].r][ms[i].c] = this.freshTile();
+      }
+    },
+
+    freshTile: function () {
+      return { t: (Math.random() * 6) | 0, dx: 0, dy: 0, sx: 0, sy: 0, vy: 0, pop: 0, dying: false };
+    },
+
+    eachTile: function (fn) {
+      for (var r = 0; r < this.ROWS; r++) for (var c = 0; c < this.COLS; c++) {
+        var t = this.board[r][c];
+        if (t) fn(t, r, c);
+      }
+    },
+
+    findMatches: function () {
+      var hits = {}, r, c, run, i;
+      for (r = 0; r < this.ROWS; r++) {
+        run = 1;
+        for (c = 1; c <= this.COLS; c++) {
+          var same = c < this.COLS && this.board[r][c] && this.board[r][c - 1] && this.board[r][c].t === this.board[r][c - 1].t;
+          if (same) run++;
+          else { if (run >= 3) for (i = 0; i < run; i++) hits[r + ":" + (c - 1 - i)] = true; run = 1; }
+        }
+      }
+      for (c = 0; c < this.COLS; c++) {
+        run = 1;
+        for (r = 1; r <= this.ROWS; r++) {
+          var same2 = r < this.ROWS && this.board[r][c] && this.board[r - 1][c] && this.board[r][c].t === this.board[r - 1][c].t;
+          if (same2) run++;
+          else { if (run >= 3) for (i = 0; i < run; i++) hits[(r - 1 - i) + ":" + c] = true; run = 1; }
+        }
+      }
+      return Object.keys(hits).map(function (k) { var p = k.split(":"); return { r: +p[0], c: +p[1] }; });
+    },
+
+    adjacent: function (a, b) { return Math.abs(a.r - b.r) + Math.abs(a.c - b.c) === 1; },
+
+    cellAt: function (x, y) {
+      var c = Math.floor((x - this.OX) / this.CELL), r = Math.floor((y - this.OY) / this.CELL);
+      if (r < 0 || c < 0 || r >= this.ROWS || c >= this.COLS) return null;
+      return { r: r, c: c };
+    },
+
+    pointer: function (kind, x, y) {
+      if (this.phase !== "idle" || this.moves <= 0) return;
+      var cell = this.cellAt(x, y);
+      if (kind === "down") {
+        if (!cell) { this.sel = null; this.dragFrom = null; return; }
+        // Tapping a neighbour of the lit cell swaps too — easier than dragging
+        // accurately on a small screen.
+        if (this.sel && this.adjacent(this.sel, cell)) { this.beginSwap(this.sel, cell); return; }
+        this.sel = cell; this.dragFrom = cell; this.glow = 0;
+        return;
+      }
+      if (kind === "move") {
+        if (!this.dragFrom || !cell) return;
+        if (this.adjacent(this.dragFrom, cell)) this.beginSwap(this.dragFrom, cell);
+        return;
+      }
+      this.dragFrom = null;
+    },
+
+    // Swap the data straight away, then park both sprites back at their old
+    // cells so the animation can carry them home.
+    swapCells: function (a, b) {
+      var A = this.board[a.r][a.c], B = this.board[b.r][b.c];
+      this.board[a.r][a.c] = B;
+      this.board[b.r][b.c] = A;
+      B.sx = (b.c - a.c) * this.CELL; B.sy = (b.r - a.r) * this.CELL;
+      A.sx = (a.c - b.c) * this.CELL; A.sy = (a.r - b.r) * this.CELL;
+      B.dx = B.sx; B.dy = B.sy;
+      A.dx = A.sx; A.dy = A.sy;
+    },
+
+    beginSwap: function (a, b) {
+      if (!this.board[a.r][a.c] || !this.board[b.r][b.c]) return;
+      this.swapA = { r: a.r, c: a.c };
+      this.swapB = { r: b.r, c: b.c };
+      this.swapCells(this.swapA, this.swapB);
+      this.phase = "swap"; this.anim = 0;
+      this.sel = null; this.dragFrom = null;
+    },
+
+    beginClear: function () {
+      var ms = this.findMatches();
+      if (!ms.length) { this.settle(); return; }
+      var gain = Math.round(ms.length * 12 * (1 + this.chain * 0.35));
+      this.score += gain;
+      statMain.textContent = this.score;
+      var sx = 0, sy = 0, n = 0;
+      for (var i = 0; i < ms.length; i++) {
+        var m = ms[i], t = this.board[m.r][m.c];
+        if (!t || t.dying) continue;
+        t.dying = true; t.pop = 0.3;
+        var px = this.OX + m.c * this.CELL + this.CELL / 2;
+        var py = this.OY + m.r * this.CELL + this.CELL / 2;
+        sx += px; sy += py; n++;
+        for (var k = 0; k < 5; k++) {
+          var ang = Math.random() * Math.PI * 2, v = 16 + Math.random() * 34;
+          this.sparks.push({ x: px, y: py, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v - 18, life: 0.6, col: TILE_COL[t.t] });
+        }
+      }
+      if (n) {
+        this.pops.push({
+          x: sx / n, y: sy / n, life: 1,
+          text: (this.chain > 0 ? "x" + (this.chain + 1) + " " : "") + "+" + gain
+        });
+      }
+      this.phase = "clear"; this.anim = 0.3;
+    },
+
+    beginFall: function () {
+      for (var c = 0; c < this.COLS; c++) {
+        var write = this.ROWS - 1;
+        for (var r = this.ROWS - 1; r >= 0; r--) {
+          if (!this.board[r][c]) continue;
+          if (write !== r) {
+            var t = this.board[r][c];
+            this.board[write][c] = t;
+            this.board[r][c] = null;
+            t.dy = (r - write) * this.CELL;  // negative: still drawn at its old cell
+            t.vy = 0;
+          }
+          write--;
+        }
+        // Every new tile in a column falls the same distance, so they arrive in
+        // order and stay evenly spaced on the way down.
+        var drop = (write + 1) * this.CELL;
+        for (var r2 = write; r2 >= 0; r2--) {
+          var nt = this.freshTile();
+          nt.dy = -drop;
+          this.board[r2][c] = nt;
+        }
+      }
+      this.phase = "fall";
+    },
+
+    settle: function () {
+      if (this.findMatches().length) { this.chain++; this.beginClear(); return; }
+      this.chain = 0;
+      this.phase = "idle";
+      if (this.moves <= 0 && !this.ended) {
+        this.ended = true;
+        var self = this;
+        setTimeout(function () { finishRun(self.score); }, 280);
+      }
+    },
+
+    step: function (dt) {
+      var i;
+
+      for (i = this.sparks.length - 1; i >= 0; i--) {
+        var s = this.sparks[i];
+        s.vy += 320 * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt * 1.7;
+        if (s.life <= 0) this.sparks.splice(i, 1);
+      }
+      for (i = this.pops.length - 1; i >= 0; i--) {
+        this.pops[i].y -= 24 * dt;
+        this.pops[i].life -= dt * 1.15;
+        if (this.pops[i].life <= 0) this.pops.splice(i, 1);
+      }
+      this.glow += dt;
+
+      if (this.phase === "swap" || this.phase === "swapback") {
+        this.anim += dt / 0.15;
+        var k = Math.min(1, this.anim);
+        var A = this.board[this.swapA.r][this.swapA.c];
+        var B = this.board[this.swapB.r][this.swapB.c];
+        if (A) { A.dx = A.sx * (1 - k); A.dy = A.sy * (1 - k); }
+        if (B) { B.dx = B.sx * (1 - k); B.dy = B.sy * (1 - k); }
+        if (this.anim >= 1) {
+          if (A) { A.dx = 0; A.dy = 0; }
+          if (B) { B.dx = 0; B.dy = 0; }
+          if (this.phase === "swap") {
+            if (this.findMatches().length) {
+              this.moves--;
+              statSub.textContent = this.moves + " LƯỢT";
+              this.chain = 0;
+              this.beginClear();
+            } else {
+              // illegal swap: carry both back where they came from
+              this.swapCells(this.swapA, this.swapB);
+              this.phase = "swapback"; this.anim = 0;
+            }
+          } else {
+            this.phase = "idle";
+          }
+        }
+        return;
+      }
+
+      if (this.phase === "clear") {
+        this.anim -= dt;
+        this.eachTile(function (t) { if (t.pop > 0) t.pop = Math.max(0, t.pop - dt); });
+        if (this.anim <= 0) {
+          for (var r = 0; r < this.ROWS; r++) for (var c = 0; c < this.COLS; c++) {
+            if (this.board[r][c] && this.board[r][c].dying) this.board[r][c] = null;
+          }
+          this.beginFall();
+        }
+        return;
+      }
+
+      if (this.phase === "fall") {
+        var moving = false;
+        this.eachTile(function (t) {
+          if (t.dy >= 0) return;
+          t.vy += 1150 * dt;
+          t.dy += t.vy * dt;
+          if (t.dy >= 0) { t.dy = 0; t.vy = 0; }
+          else moving = true;
+        });
+        if (!moving) this.settle();
+      }
+    },
+
+    draw: function (c) {
+      c.drawImage(bgSky, 0, 0);
+
+      rect(c, 0, 0, BW, 44, P.red);
+      rect(c, 0, 44, BW, 4, P.ink);
+      for (var s = 0; s < 6; s++) {
+        drawCandy(c, KINDS[s], 16 + s * 26, KINDS[s] === "lolly" ? 18 : 21, TILE_COL[s], s);
+      }
+
+      var BX = this.OX, BY = this.OY, CE = this.CELL;
+      rect(c, BX - 4, BY - 4, this.COLS * CE + 8, this.ROWS * CE + 8, P.ink);
+
+      c.save();
+      c.beginPath();
+      c.rect(BX, BY, this.COLS * CE, this.ROWS * CE);
+      c.clip();
+
+      var r, col2;
+      for (r = 0; r < this.ROWS; r++) for (col2 = 0; col2 < this.COLS; col2++) {
+        var lit = this.sel && this.sel.r === r && this.sel.c === col2;
+        rect(c, BX + col2 * CE, BY + r * CE, CE, CE,
+             lit ? P.cream : ((r + col2) % 2 ? P.pinkPale : P.pinkLt));
+      }
+
+      for (r = 0; r < this.ROWS; r++) for (col2 = 0; col2 < this.COLS; col2++) {
+        var t = this.board[r][col2];
+        if (!t) continue;
+        var cx = BX + col2 * CE + CE / 2 + t.dx;
+        var cy = BY + r * CE + CE / 2 + t.dy;
+        var lift = KINDS[t.t] === "lolly" ? 3 : 0;
+        if (t.dying) {
+          if (t.pop > 0.15) drawCandy(c, KINDS[t.t], cx, cy - lift, TILE_COL[t.t], 0);
+          discOutline(c, cx, cy, Math.round(3 + ((0.3 - t.pop) / 0.3) * 9), P.cream);
+        } else {
+          drawCandy(c, KINDS[t.t], cx, cy - lift, TILE_COL[t.t], 0);
+        }
+      }
+
+      // marching border so the chosen cell clearly reads as selected
+      if (this.sel) {
+        var sxp = BX + this.sel.c * CE, syp = BY + this.sel.r * CE;
+        var bc = (Math.floor(this.glow * 8) % 2) === 0 ? P.red : P.sun;
+        rect(c, sxp, syp, CE, 2, bc);
+        rect(c, sxp, syp + CE - 2, CE, 2, bc);
+        rect(c, sxp, syp, 2, CE, bc);
+        rect(c, sxp + CE - 2, syp, 2, CE, bc);
+      }
+
+      for (var i = 0; i < this.sparks.length; i++) {
+        var sp = this.sparks[i];
+        rect(c, sp.x, sp.y, 2, 2, sp.life > 0.28 ? sp.col : P.cream);
+      }
+      for (i = 0; i < this.pops.length; i++) {
+        var pp = this.pops[i];
+        pxText(c, pp.text, pp.x, pp.y - 3, P.ink, 2);
+        pxText(c, pp.text, pp.x, pp.y - 5, P.sun, 2);
+      }
+
+      c.restore();
+    }
+  };
+
+  /* =========================================================
+     Game 3 — Chạy Kẹo
+     ========================================================= */
+
+  var runner = {
+    id: "runner",
+    name: "Chạy Kẹo",
+    goal: 550,
+    goalText: "Chạy 550 mét",
+    control: "Chạm thẳng vào làn muốn sang.",
+    unit: "MÉT",
+    subInit: "0 KẸO",
+    LANES: [47, 80, 113],
+    lane: 1, px: 80, dist: 0, coins: 0, speed: 92, obs: [], spawnD: 0, jump: 0, dead: false, downY: 0, downX: 0,
+
+    legend: [
+      { icon: function (g) { sLolly(g, 10, 14, P.straw, 0); sBear(g, 26, 18, P.lime); }, text: "Kẹo trên đường · nhặt được +6 mét" },
+      { icon: function (g) { for (var i = 0; i < 4; i++) rect(g, 4 + i * 8, 8, 4, 20, i % 2 ? P.cream : P.red); rect(g, 4, 8, 28, 20, "rgba(0,0,0,0)"); },
+        text: "Rào kẹo gậy · cao, phải đổi làn để né" },
+      { icon: function (g) { rect(g, 5, 16, 26, 9, P.mudDk); rect(g, 8, 13, 20, 4, P.mud); rect(g, 5, 25, 26, 2, P.ink); },
+        text: "Vũng kẹo chảy · vuốt lên để nhảy qua" }
+    ],
+
+    icon: function (c) {
+      rect(c, 0, 0, 26, 26, P.grass);
+      rect(c, 5, 0, 16, 26, P.pinkPale);
+      rect(c, 5, 0, 1, 26, P.ink); rect(c, 20, 0, 1, 26, P.ink);
+      rect(c, 12, 2, 2, 6, P.red); rect(c, 12, 12, 2, 6, P.red);
+      sLolly(c, 13, 17, P.straw, 0);
+    },
+
+    reset: function () {
+      this.lane = 1; this.px = this.LANES[1]; this.dist = 0; this.coins = 0;
+      this.speed = 92; this.obs = []; this.spawnD = 40; this.jump = 0; this.dead = false;
+    },
+
+    pointer: function (kind, x, y) {
+      if (kind === "down") { this.downY = y; this.downX = x; return; }
+      if (kind === "up") {
+        var dy = y - this.downY, dx = x - this.downX;
+        if (dy < -18 && Math.abs(dy) > Math.abs(dx)) { if (this.jump <= 0) this.jump = 0.52; return; }
+        if (Math.abs(dx) > 14) { this.lane = Math.max(0, Math.min(2, this.lane + (dx > 0 ? 1 : -1))); return; }
+        // A tap goes straight to the lane nearest the finger. Stepping one lane
+        // per tap made the middle lane unreachable from either edge.
+        var best = 0, bd = Infinity;
+        for (var i = 0; i < 3; i++) {
+          var d = Math.abs(this.LANES[i] - x);
+          if (d < bd) { bd = d; best = i; }
+        }
+        this.lane = best;
+      }
+    },
+
+    step: function (dt) {
+      if (this.dead) return;
+      this.speed = 92 + this.dist * 0.09;
+      this.dist += this.speed * dt * 0.35;
+      statMain.textContent = Math.floor(this.dist);
+      statSub.textContent = this.coins + " KẸO";
+
+      this.px += (this.LANES[this.lane] - this.px) * Math.min(1, dt * 12);
+      if (this.jump > 0) this.jump -= dt;
+
+      this.spawnD -= this.speed * dt;
+      if (this.spawnD <= 0) {
+        var lane = (Math.random() * 3) | 0, kind = Math.random();
+        if (kind < 0.42) this.obs.push({ y: -16, lane: lane, type: "wall" });
+        else if (kind < 0.62) this.obs.push({ y: -16, lane: lane, type: "low" });
+        else {
+          var k = KINDS[(Math.random() * KINDS.length) | 0];
+          var col = FLAVOURS[(Math.random() * FLAVOURS.length) | 0];
+          for (var n = 0; n < 3; n++) this.obs.push({ y: -16 - n * 17, lane: lane, type: "coin", kind: k, col: col });
+        }
+        this.spawnD = 52 + Math.random() * 46;
+      }
+
+      var py = 228;
+      for (var i = this.obs.length - 1; i >= 0; i--) {
+        var o = this.obs[i];
+        o.y += this.speed * dt;
+        if (o.y > BH + 24) { this.obs.splice(i, 1); continue; }
+        var ox = this.LANES[o.lane];
+        if (Math.abs(ox - this.px) < 13 && Math.abs(o.y - py) < 13) {
+          if (o.type === "coin") { this.coins++; this.dist += 6; this.obs.splice(i, 1); }
+          else if (o.type === "low") { if (this.jump <= 0) { this.dead = true; finishRun(Math.floor(this.dist)); return; } }
+          else { this.dead = true; finishRun(Math.floor(this.dist)); return; }
+        }
+      }
+    },
+
+    draw: function (c) {
+      rect(c, 0, 0, BW, BH, P.grass);
+      var off = this.dist * 2.9;
+      var sideOff = off % SIDE_H;
+      for (var y = -SIDE_H + sideOff; y < BH; y += SIDE_H) {
+        c.drawImage(tileSide, 0, y);
+        // half-tile offset on the right so the two verges do not mirror
+        c.drawImage(tileSide, BW - SIDE_W, y + SIDE_H / 2);
+      }
+
+      // the road itself: a pale candy strip with red trim
+      rect(c, SIDE_W, 0, BW - SIDE_W * 2, BH, P.pinkPale);
+      rect(c, SIDE_W, 0, 2, BH, P.ink);
+      rect(c, BW - SIDE_W - 2, 0, 2, BH, P.ink);
+      var dash = off % 26;
+      for (var yy = -26 + dash; yy < BH; yy += 26) rect(c, SIDE_W + 2, yy, BW - SIDE_W * 2 - 4, 4, P.pinkLt);
+      for (var d = 0; d < 2; d++) {
+        var lx = 63 + d * 33;
+        for (var y2 = -24 + dash; y2 < BH; y2 += 24) rect(c, lx, y2, 2, 12, P.red);
+      }
+
+      for (var i = 0; i < this.obs.length; i++) {
+        var o = this.obs[i], ox = this.LANES[o.lane];
+        if (o.type === "coin") {
+          drawCandy(c, o.kind, ox, o.y, o.col, o.y * 0.05);
+        } else if (o.type === "low") {
+          rect(c, ox - 14, o.y - 4, 28, 9, P.mudDk);
+          rect(c, ox - 12, o.y - 6, 24, 4, P.mud);
+          rect(c, ox - 14, o.y + 4, 28, 1, P.ink);
+        } else {
+          // candy-cane barrier
+          rect(c, ox - 14, o.y - 10, 28, 20, P.ink);
+          for (var s = 0; s < 7; s++) rect(c, ox - 13 + s * 4, o.y - 9, 4, 18, s % 2 ? P.red : P.cream);
+        }
+      }
+
+      var py = 228, lift = this.jump > 0 ? Math.round(Math.sin((1 - this.jump / 0.52) * Math.PI) * 12) : 0;
+      rect(c, this.px - 6, py + 10, 12, 3, "rgba(43,27,20,.28)");
+      sBear(c, this.px, py - lift, P.red);
+    }
+  };
+
+  /* =========================================================
+     Game 4 — Landmark 81
+     ========================================================= */
+
+  var flappy = {
+    id: "flappy",
+    name: "Landmark 81",
+    goal: 8,
+    goalText: "Vượt 8 tầng",
+    control: "Chạm màn hình để bay lên, thả ra để rơi xuống.",
+    unit: "TẦNG",
+    subInit: "TẦNG",
+    y: 120, vy: 0, score: 0, pipes: [], t: 0, dead: false, started: false,
+
+    legend: [
+      { icon: function (g) { rect(g, 4, 0, 12, 12, P.cream); rect(g, 4, 10, 12, 3, P.red); rect(g, 4, 24, 12, 12, P.cream); rect(g, 4, 24, 12, 3, P.red); sLolly(g, 26, 18, P.straw, 0); },
+        text: "Lách qua khe giữa hai tầng tháp" },
+      { icon: function (g) { sLolly(g, 18, 14, P.straw, 0); rect(g, 16, 26, 4, 2, P.ink); rect(g, 14, 29, 8, 2, P.ink); },
+        text: "Chạm liên tục để giữ độ cao" }
+    ],
+
+    icon: function (c) {
+      c.drawImage(bgSky, 0, 0, 26, 26, 0, 0, 26, 26);
+      rect(c, 9, 3, 9, 23, P.cream);
+      rect(c, 9, 3, 9, 3, P.red);
+      for (var r = 0; r < 5; r++) for (var k = 0; k < 2; k++) rect(c, 11 + k * 4, 8 + r * 4, 2, 2, P.aqua);
+      sLolly(c, 4, 13, P.straw, 0);
+    },
+
+    reset: function () {
+      this.y = 110; this.vy = 0; this.score = 0; this.pipes = []; this.t = 0;
+      this.dead = false; this.started = false;
+      for (var i = 0; i < 3; i++) this.addPipe(BW + 70 + i * 82);
+    },
+
+    addPipe: function (x) {
+      var gap = 84;
+      var top = 46 + Math.random() * (BH - gap - 106);
+      this.pipes.push({ x: x, top: top, gap: gap, passed: false });
+    },
+
+    pointer: function (kind) {
+      if (kind !== "down" || this.dead) return;
+      this.started = true;
+      this.vy = -108;
+    },
+
+    step: function (dt) {
+      this.t += dt;
+      if (!this.started || this.dead) return;
+      this.vy += 340 * dt;
+      this.y += this.vy * dt;
+
+      var speed = 62 + this.score * 2.2;
+      for (var i = this.pipes.length - 1; i >= 0; i--) {
+        var p = this.pipes[i];
+        p.x -= speed * dt;
+        if (!p.passed && p.x + 22 < 46) { p.passed = true; this.score++; statMain.textContent = this.score; }
+        if (p.x < -30) { this.pipes.splice(i, 1); this.addPipe(this.pipes[this.pipes.length - 1].x + 82); }
+        if (46 + 7 > p.x && 46 - 7 < p.x + 22) {
+          if (this.y - 7 < p.top || this.y + 7 > p.top + p.gap) { this.dead = true; finishRun(this.score); return; }
+        }
+      }
+      if (this.y < 7) { this.y = 7; if (this.vy < 0) this.vy = 0; }
+      if (this.y > BH - 10) { this.dead = true; finishRun(this.score); return; }
+    },
+
+    tower: function (c, x, y, h, capAtBottom) {
+      if (h <= 0) return;
+      rect(c, x, y, 22, h, P.cream);
+      rect(c, x, y, 2, h, "#D8C6A8");
+      rect(c, x + 20, y, 2, h, "#D8C6A8");
+      for (var r = 0; r < Math.floor(h / 9); r++) {
+        for (var k = 0; k < 3; k++) {
+          var on = ((r * 3 + k + (x | 0)) % 4) !== 0;
+          rect(c, x + 4 + k * 5, y + 5 + r * 9, 3, 4, on ? P.aqua : "#C9B99C");
+        }
+      }
+      rect(c, x - 2, capAtBottom ? y + h - 7 : y, 26, 7, P.red);
+      rect(c, x - 2, capAtBottom ? y + h - 7 : y, 26, 2, P.redLt);
+    },
+
+    draw: function (c) {
+      c.drawImage(bgSky, 0, 0);
+
+      // Landmark 81 standing behind the play field
+      var tw = 26, tx = BW - 44;
+      rect(c, tx, 62, tw, BH - 62, "rgba(30,90,130,.42)");
+      rect(c, tx + 8, 40, 10, 22, "rgba(30,90,130,.42)");
+      for (var r = 0; r < 16; r++) for (var k = 0; k < 3; k++) {
+        if ((r + k) % 3 === 0) rect(c, tx + 4 + k * 7, 72 + r * 12, 3, 4, "rgba(255,255,255,.42)");
+      }
+
+      for (var i = 0; i < this.pipes.length; i++) {
+        var p = this.pipes[i];
+        this.tower(c, p.x, 0, p.top, true);
+        this.tower(c, p.x, p.top + p.gap, BH - (p.top + p.gap), false);
+      }
+
+      var by = this.y | 0;
+      var tilt = Math.max(-3, Math.min(4, Math.round(this.vy / 40)));
+      rect(c, 44, by + 8 + tilt, 4, 8, "#F2E3C4");
+      disc(c, 46, by, 8, P.straw);
+      discOutline(c, 46, by, 8, P.ink);
+      swirl(c, 46, by, 8, P.cream, this.t * 3);
+      rect(c, 42, by - 4, 2, 2, P.white);
+    }
+  };
+
+  var GAMES = [slice, match, runner, flappy];
+
+  /* =========================================================
+     Hub
+     ========================================================= */
+
+  function buildHub() {
+    gridEl.innerHTML = "";
+    GAMES.forEach(function (g) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "mission" + (cleared[g.id] ? " cleared" : "");
+      var cv = document.createElement("canvas");
+      cv.width = 26; cv.height = 26;
+      var cc = cv.getContext("2d");
+      cc.imageSmoothingEnabled = false;
+      g.icon(cc);
+      var h = document.createElement("h2"); h.textContent = g.name;
+      var pg = document.createElement("p"); pg.className = "goal"; pg.textContent = g.goalText;
+      var done = document.createElement("span"); done.className = "done"; done.textContent = "✓";
+      b.appendChild(cv); b.appendChild(h); b.appendChild(pg); b.appendChild(done);
+      b.addEventListener("click", function () { openGame(g); });
+      gridEl.appendChild(b);
+    });
+
+    var lock = document.createElement("div");
+    lock.className = "mission locked wide";
+    var lcv = document.createElement("canvas");
+    lcv.width = 26; lcv.height = 26;
+    var lc = lcv.getContext("2d");
+    lc.imageSmoothingEnabled = false;
+    rect(lc, 0, 0, 26, 26, "#EDE0C6");
+    rect(lc, 8, 11, 10, 9, P.inkSoft);
+    rect(lc, 10, 6, 6, 5, P.inkSoft);
+    rect(lc, 12, 8, 2, 3, "#EDE0C6");
+    var txt = document.createElement("div"); txt.className = "txt";
+    var lh = document.createElement("h2"); lh.textContent = "Nhiệm vụ 5";
+    var lp = document.createElement("p"); lp.className = "goal";
+    lp.textContent = "Đang chốt cơ chế — chỗ trống để bạn thêm món liên quan hơn";
+    txt.appendChild(lh); txt.appendChild(lp);
+    lock.appendChild(lcv); lock.appendChild(txt);
+    gridEl.appendChild(lock);
+
+    paintStamps();
+  }
+
+  function paintStamps() {
+    pipsEl.innerHTML = "";
+    var n = 0;
+    GAMES.forEach(function (g) {
+      var d = document.createElement("span");
+      d.className = "pip" + (cleared[g.id] ? " on" : "");
+      pipsEl.appendChild(d);
+      if (cleared[g.id]) n++;
+    });
+    meterFill.style.transform = "scaleX(" + (n / GAMES.length) + ")";
+    rewardText.textContent = n >= GAMES.length
+      ? "Đủ tem. Đây là chỗ gắn mã ưu đãi hoặc quà — bản demo cố tình chưa làm phần này."
+      : "Còn " + (GAMES.length - n) + " nhiệm vụ nữa là đủ tem đổi quà.";
+    Array.prototype.forEach.call(gridEl.children, function (el, i) {
+      if (GAMES[i]) el.classList.toggle("cleared", !!cleared[GAMES[i].id]);
+    });
+  }
+
+  /* ---------- instruction board ---------- */
+
+  function buildLegend(g) {
+    ovLegend.innerHTML = "";
+    (g.legend || []).forEach(function (item) {
+      var li = document.createElement("li");
+      var cv = document.createElement("canvas");
+      cv.width = 36; cv.height = 36;
+      var cc = cv.getContext("2d");
+      cc.imageSmoothingEnabled = false;
+      rect(cc, 0, 0, 36, 36, P.cream);
+      item.icon(cc);
+      var sp = document.createElement("span");
+      sp.textContent = item.text;
+      li.appendChild(cv); li.appendChild(sp);
+      ovLegend.appendChild(li);
+    });
+  }
+
+  /* =========================================================
+     Flow
+     ========================================================= */
+
+  function openGame(g) {
+    active = g;
+    running = false;
+    hubEl.hidden = true;
+    playEl.hidden = false;
+    playTitle.textContent = g.name;
+    statMain.textContent = "0";
+    statSub.textContent = g.subInit || g.unit;
+    ovKicker.textContent = cleared[g.id] ? "Đã hoàn thành · chơi lại" : "Hướng dẫn chơi";
+    ovTitle.textContent = g.name;
+    buildLegend(g);
+    ovCtl.textContent = g.control;
+    ovGoal.textContent = "MỤC TIÊU: " + g.goalText.toUpperCase();
+    ovStart.hidden = false;
+    ovEnd.hidden = true;
+    g.reset();
+  }
+
+  function startRun() {
+    if (!active) return;
+    active.reset();
+    statMain.textContent = "0";
+    statSub.textContent = active.subInit || active.unit;
+    ovStart.hidden = true;
+    ovEnd.hidden = true;
+    running = true;
+  }
+
+  function finishRun(scoreVal) {
+    running = false;
+    var g = active;
+    var win = scoreVal >= g.goal;
+    if (win && !cleared[g.id]) { cleared[g.id] = true; saveCleared(); }
+    endScore.textContent = scoreVal;
+    endVerdict.textContent = win ? "Đạt mục tiêu — nhận 1 tem" : "Chưa đạt mục tiêu";
+    endVerdict.className = "verdict " + (win ? "win" : "lose");
+    endNote.textContent = win
+      ? "Tem đã được cộng vào thẻ của bạn."
+      : "Cần " + g.goal + " " + g.unit.toLowerCase() + " để lấy tem. Thử lại nhé.";
+    ovEnd.hidden = false;
+  }
+
+  function backToHub() {
+    running = false;
+    active = null;
+    playEl.hidden = true;
+    hubEl.hidden = false;
+    paintStamps();
+  }
+
+  document.getElementById("ovPlay").addEventListener("click", startRun);
+  document.getElementById("endAgain").addEventListener("click", startRun);
+  document.getElementById("endBack").addEventListener("click", backToHub);
+  document.getElementById("backBtn").addEventListener("click", backToHub);
+
+  /* ---------- pointer ---------- */
+
+  function toBase(e) {
+    var r = canvas.getBoundingClientRect();
+    // Undo the object-fit letterbox so a tap lands where the player sees it.
+    var s = Math.min(r.width / BW, r.height / BH);
+    var ox = r.left + (r.width - BW * s) / 2;
+    var oy = r.top + (r.height - BH * s) / 2;
+    return { x: (e.clientX - ox) / s, y: (e.clientY - oy) / s };
+  }
+  function send(kind, e) {
+    if (!active || !running || !active.pointer) return;
+    var p = toBase(e);
+    active.pointer(kind, p.x, p.y);
+  }
+  canvas.addEventListener("pointerdown", function (e) {
+    send("down", e);
+    if (canvas.setPointerCapture) { try { canvas.setPointerCapture(e.pointerId); } catch (err) {} }
+  });
+  canvas.addEventListener("pointermove", function (e) { send("move", e); });
+  canvas.addEventListener("pointerup", function (e) { send("up", e); });
+  canvas.addEventListener("pointercancel", function (e) { send("up", e); });
+  // Without these, a drag released off-canvas leaves the blade "down" and the
+  // next stray hover slices for free.
+  canvas.addEventListener("pointerleave", function (e) { send("up", e); });
+  canvas.addEventListener("lostpointercapture", function (e) { send("up", e); });
+
+  /* ---------- loop ---------- */
+
+  function loop(now) {
+    if (!lastT) lastT = now;
+    var dt = Math.min((now - lastT) / 1000, 0.05);
+    lastT = now;
+    if (active && running) active.step(dt);
+    if (active) active.draw(ctx);
+    else ctx.drawImage(bgSun, 0, 0);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  /* =========================================================
+     Wordmark + QR
+     ========================================================= */
+
+  (function () {
+    var c = document.getElementById("swirlMark").getContext("2d");
+    c.imageSmoothingEnabled = false;
+    disc(c, 14, 14, 13, P.red);
+    swirl(c, 14, 14, 13, P.sun, 0);
+    discOutline(c, 14, 14, 13, P.cream);
+  })();
+
+  (function () {
+    // THE ONE LINE TO CHANGE IF THE GAME MOVES.
+    // For a printed campaign, point this at a redirect you control instead of
+    // straight at the host: boards get printed once, hosts get swapped.
+    var url = "https://nguyengiahan.github.io/";
+    var note = document.getElementById("qrNote");
+    note.textContent = "Mã trỏ tới link web game công khai. Quét là vào chơi, không cần cài app.";
+    var m = null;
+    try { m = QRGen.build(url); } catch (e) { m = null; }
+    var cv = document.getElementById("qrCanvas");
+    var c = cv.getContext("2d");
+    c.imageSmoothingEnabled = false;
+    if (!m) {
+      cv.width = 40; cv.height = 40;
+      rect(c, 0, 0, 40, 40, "#fff");
+      rect(c, 4, 18, 32, 4, P.red);
+      note.textContent = "Link quá dài để dựng mã ở đây. Bản thật sẽ dùng link rút gọn.";
+      return;
+    }
+    var target = document.getElementById("qrTarget");
+    if (target) target.textContent = url;
+    var n = m.length, quiet = 4, size = n + quiet * 2;
+    cv.width = size; cv.height = size;
+    rect(c, 0, 0, size, size, "#FFFFFF");
+    c.fillStyle = "#2B1B14";
+    for (var r = 0; r < n; r++) for (var col = 0; col < n; col++) {
+      if (m[r][col]) c.fillRect(col + quiet, r + quiet, 1, 1);
+    }
+    document.getElementById("copyLink").addEventListener("click", function () {
+      var btn = this;
+      function ok() { btn.textContent = "Đã sao chép"; setTimeout(function () { btn.textContent = "Sao chép link"; }, 1600); }
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(ok, function () { btn.textContent = "Không sao chép được"; });
+          return;
+        }
+      } catch (e) {}
+      btn.textContent = "Không sao chép được";
+    });
+  })();
+
+  buildHub();
+})();
+</script>
