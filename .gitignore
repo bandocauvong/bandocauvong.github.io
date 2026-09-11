@@ -3,3 +3,14 @@ desktop.ini
 .DS_Store
 *.log
 _scratch/
+
+# Ảnh gốc nhân vật do client cấp — atlas đã nhúng thẳng vào index.html nên
+# trang không cần các file này. Không đưa lên repo công khai.
+mau*.jpg
+character*.png
+sprites/
+sprites.png
+
+# Âm thanh: chưa nối vào game, và music.mp3 đang 2,8 MB cần rút gọn trước.
+# Bỏ ignore khi làm phần âm thanh.
+*.mp3
