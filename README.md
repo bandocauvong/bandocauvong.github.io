@@ -1,23 +1,23 @@
-# Chupa Arcade
+# Bản đồ cầu vồng
 
 Bản demo kỹ thuật: 4 mini-game pixel chạy thẳng trong trình duyệt điện thoại, dùng cho ý tưởng
 "quét QR trên bảng là chơi được ngay". Không cần cài app, không đăng nhập, không backend.
 
-**Chơi tại:** https://nguyengiahan.github.io/
+**Chơi tại:** https://bandocauvong.github.io/
 
 ## Nội dung
 
 | Nhiệm vụ | Cơ chế | Mục tiêu lấy tem |
 |---|---|---|
-| Chém Kẹo | Vuốt chém, né quỷ sâu răng | 18 viên / 30 giây |
-| Ghép Kẹo | Match-3, 6 loại kẹo | 1900 điểm / 22 lượt |
-| Chạy Kẹo | 3 làn, đổi làn + nhảy | 550 mét |
-| Landmark 81 | Chạm để bay | 8 tầng |
+| Ghép Kẹo | Match-3, 6 loại kẹo | cày tới khi hết nước đi |
+| Chạy Kẹo | 3 làn, đổi làn + nhảy | vô hạn |
+| Landmark 81 | Chạm để bay | vô hạn |
+| Đối Kẹo | Pong 2 người / đấu bot | thắng trước 5 bàn |
 
-Nhiệm vụ thứ 5 để trống có chủ đích, chờ chốt cơ chế.
+Lần đầu vào web sẽ hỏi biệt danh trước khi cho chơi.
 
-Đủ 4 tem thì mở ô đổi quà — bản demo cố tình chưa làm phần thưởng thật, vì quà có giá trị
-sẽ biến việc này thành chương trình khuyến mại, kéo theo thể lệ và pháp lý.
+Điểm quy đổi theo hệ số riêng từng game (một ván tốt ở game nào cũng ~120 điểm), cộng vào
+bảng "đua cày"; ngoài ra mỗi game có bảng top 10 riêng. Dữ liệu top 10 là mẫu, có nhãn ghi rõ.
 
 ## Cấu trúc
 
@@ -34,8 +34,10 @@ file để game tự chứa hoàn toàn, chạy tốt cả khi mạng yếu.
 
 ## Triển khai
 
-Repo tên `nguyengiahan.github.io` nên GitHub Pages tự publish từ nhánh `main`, không cần
-cấu hình gì thêm. Push là xong.
+Link đích là `bandocauvong.github.io`. Tên miền `<tên>.github.io` lấy theo **tên chủ sở hữu**
+chứ không phải tên repo, nên cần tạo một GitHub Organization miễn phí tên `bandocauvong`
+(tên này còn trống), rồi tạo repo `bandocauvong.github.io` trong org đó. Pages tự publish
+từ nhánh `main`, không cần cấu hình thêm.
 
 ## Đổi link mà mã QR trỏ tới
 

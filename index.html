@@ -1,4 +1,4 @@
-<title>Chupa Arcade</title>
+<title>Bản đồ cầu vồng</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
@@ -66,7 +66,7 @@
 
   .wordmark {
     display: flex; align-items: center; gap: 9px;
-    font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; line-height: 1;
+    font-family: var(--font-display); font-weight: 800; font-size: .92rem; line-height: 1;
     color: var(--red);
     text-shadow: 1px 1px 0 var(--cream);
   }
@@ -99,18 +99,43 @@
   .panel span { font-size: .74rem; color: var(--ink-soft); }
   .panel .chev { font-size: 1.4rem; color: var(--ink-soft); flex: none; }
 
-  .nickbar {
-    display: flex; align-items: center; gap: 9px;
-    padding: 10px 14px; background: var(--cream); border: 3px solid var(--ink);
-    box-shadow: 0 5px 0 rgba(43,27,20,.35);
+  /* First run: a door you walk through, not a field buried in the hub. */
+  .onboard {
+    position: fixed; inset: 0; z-index: 40;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    background-color: var(--sun);
+    background-image:
+      radial-gradient(circle at 3px 3px, rgba(255,255,255,.34) 1.5px, transparent 1.7px),
+      repeating-conic-gradient(from 0deg at 50% 40%,
+        var(--sun-lt) 0deg 6.2deg, rgba(255,255,255,0) 6.2deg 12.4deg);
+    background-size: 14px 14px, 100% 100%;
   }
-  .nickbar label { font-size: .66rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); flex: none; }
-  .nickbar input {
-    flex: 1; min-width: 0; border: none; border-bottom: 2px solid var(--ink);
-    background: transparent; font-family: var(--font-display); font-weight: 700;
-    font-size: 1rem; color: var(--ink); padding: 3px 2px;
+  .onboard[hidden] { display: none; }
+  .ob-card {
+    width: min(330px, 100%);
+    background: var(--cream); border: 4px solid var(--ink);
+    box-shadow: 0 8px 0 rgba(43,27,20,.4);
+    padding: 22px 20px 24px;
+    display: flex; flex-direction: column; align-items: center; gap: 11px; text-align: center;
   }
-  .nickbar input:focus { outline: none; border-bottom-color: var(--red); }
+  .ob-card canvas { width: 64px; height: 64px; image-rendering: pixelated; }
+  .ob-card h1 {
+    margin: 0; font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(1.7rem, 8vw, 2.2rem); line-height: .95; color: var(--red);
+  }
+  .ob-card h1 em { font-style: normal; display: block; color: var(--ink); }
+  .ob-card .lede { margin: 0; font-size: .85rem; line-height: 1.5; color: var(--ink-soft); max-width: 28ch; }
+  .ob-card label {
+    align-self: stretch; text-align: left; margin-top: 4px;
+    font-size: .64rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft);
+  }
+  .ob-card input {
+    align-self: stretch; border: 3px solid var(--ink); background: #FFF;
+    font-family: var(--font-display); font-weight: 700; font-size: 1.1rem;
+    color: var(--ink); padding: 9px 11px;
+  }
+  .ob-card input:focus { outline: none; border-color: var(--red); }
+  .ob-err { margin: 0; min-height: 1em; font-size: .74rem; font-weight: 600; color: var(--red); }
 
   /* leaderboard */
   .board-screen { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
@@ -131,12 +156,12 @@
   }
   .ranks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
   .ranks li {
-    display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 9px;
+    display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: 9px;
     padding: 8px 10px; background: var(--cream); border: 2px solid var(--ink);
     font-size: .84rem;
   }
   .ranks li .no { font-family: var(--font-display); font-weight: 800; color: var(--ink-soft); text-align: center; }
-  .ranks li .no canvas { width: 22px; height: 24px; image-rendering: pixelated; display: block; margin: 0 auto; }
+  .ranks li .no canvas { width: 32px; height: 32px; image-rendering: pixelated; display: block; margin: 0 auto; }
   .ranks li .who { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ranks li .pts { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--red); }
   .ranks li.top1 .no, .ranks li.top2 .no, .ranks li.top3 .no { color: var(--red); }
@@ -377,11 +402,23 @@
   @media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; } }
 </style>
 
+<section class="onboard" id="onboard" hidden>
+  <div class="ob-card">
+    <canvas id="obMark" width="64" height="64"></canvas>
+    <h1>Bản đồ<em>cầu vồng</em></h1>
+    <p class="lede">Chơi game trên đường về quê, gom điểm, leo bảng xếp hạng toàn quốc.</p>
+    <label for="obNick">Đặt biệt danh của bạn</label>
+    <input id="obNick" maxlength="14" placeholder="VD: keo_mut_2k" autocomplete="off">
+    <p class="ob-err" id="obErr"></p>
+    <button class="btn" id="obPlay" type="button">Chơi</button>
+  </div>
+</section>
+
 <main class="cab">
   <div class="topbar">
     <div class="wordmark">
       <canvas class="swirl" id="swirlMark" width="28" height="28"></canvas>
-      <span>CHUPA <b>ARCADE</b></span>
+      <span>BẢN ĐỒ <b>CẦU VỒNG</b></span>
     </div>
     <div class="stamps">
       <span>Điểm</span>
@@ -397,11 +434,6 @@
       </div>
 
       <div class="grid" id="missionGrid"></div>
-
-      <div class="nickbar">
-        <label for="nickInput">Biệt danh</label>
-        <input id="nickInput" maxlength="14" placeholder="Nhập biệt danh của bạn">
-      </div>
 
       <button class="panel" id="openBoard" type="button">
         <canvas id="boardIcon" width="26" height="26"></canvas>
@@ -434,6 +466,7 @@
       <ul class="ranks" id="rankList"></ul>
       <div class="board-actions">
         <button class="btn" id="shareRank" type="button">Tạo ảnh khoe</button>
+        <button class="btn ghost" id="editNick" type="button">Đổi biệt danh</button>
       </div>
     </section>
 
@@ -1036,36 +1069,109 @@
     rect(c, cx - 22, cy + 3, 6, 1, spd);
   }
 
-  // Podium hardware. Drawn rather than lettered so the top three read at a
-  // glance even before anyone parses the numbers.
-  function sTrophy(c, x, y) {
-    var lite = "#FFE79A", gold = "#FFC93C", deep = "#D99A0F", ink = "#2B1B14";
-    rect(c, x + 4, y + 22, 16, 3, ink);
-    rect(c, x + 6, y + 19, 12, 3, deep);
-    rect(c, x + 10, y + 14, 4, 5, deep);
-    rect(c, x + 2, y + 4, 4, 7, deep);
-    rect(c, x + 18, y + 4, 4, 7, deep);
-    rect(c, x + 3, y + 10, 3, 2, deep);
-    rect(c, x + 18, y + 10, 3, 2, deep);
-    rect(c, x + 5, y + 3, 14, 11, gold);
-    rect(c, x + 5, y + 14, 14, 2, deep);
-    rect(c, x + 7, y + 5, 3, 7, lite);
-    rect(c, x + 4, y + 2, 16, 2, lite);
-    rect(c, x + 4, y + 1, 16, 1, ink);
+  /* Podium hardware, drawn from the reference art: a handled cup with a "1" on
+     the bowl, and star medals on V-shaped ribbon tails. Each takes a time value
+     so the board can animate them — gold twinkles, silver and bronze only catch
+     a moving highlight. */
+
+  function star4(c, cx, cy, r, col) {
+    c.fillStyle = col;
+    c.fillRect(cx, cy - r, 1, r * 2 + 1);
+    c.fillRect(cx - r, cy, r * 2 + 1, 1);
+    if (r > 1) {
+      c.fillRect(cx - 1, cy - 1, 1, 1); c.fillRect(cx + 1, cy - 1, 1, 1);
+      c.fillRect(cx - 1, cy + 1, 1, 1); c.fillRect(cx + 1, cy + 1, 1, 1);
+    }
   }
 
-  function sMedal(c, x, y, deep, mid, lite) {
-    rect(c, x + 5, y + 1, 4, 9, "#D6353B");
-    rect(c, x + 15, y + 1, 4, 9, "#2F6FD0");
-    rect(c, x + 5, y + 1, 4, 2, "#F05A60");
-    rect(c, x + 15, y + 1, 4, 2, "#4E8CE8");
-    disc(c, x + 12, y + 16, 8, mid);
-    discOutline(c, x + 12, y + 16, 8, "#2B1B14");
-    disc(c, x + 12, y + 16, 5, deep);
-    rect(c, x + 11, y + 12, 2, 8, lite);
-    rect(c, x + 8, y + 15, 8, 2, lite);
-    rect(c, x + 9, y + 13, 2, 2, lite);
-    rect(c, x + 14, y + 13, 2, 2, lite);
+  var STAR5 = [
+    "....X....", "...XXX...", "XXXXXXXXX", ".XXXXXXX.",
+    "..XXXXX..", "..XXXXX..", ".XX...XX.", ".X.....X."
+  ];
+  function star5(c, x, y, col) {
+    c.fillStyle = col;
+    for (var r = 0; r < STAR5.length; r++) {
+      for (var k = 0; k < 9; k++) if (STAR5[r].charAt(k) === "X") c.fillRect(x + k, y + r, 1, 1);
+    }
+  }
+
+  // A highlight band sweeping across a disc, clipped per row so it stays crisp.
+  function sheen(c, cx, cy, r, phase, alpha) {
+    var sweep = ((phase % 1) * (r * 4 + 8)) - r - 4;
+    for (var dy = -r; dy <= r; dy++) {
+      var dx = Math.floor(Math.sqrt(r * r - dy * dy));
+      var bx = Math.round(cx + sweep + dy * 0.45);
+      var x0 = Math.max(cx - dx, bx), x1 = Math.min(cx + dx + 1, bx + 3);
+      if (x1 > x0) { c.fillStyle = "rgba(255,255,255," + alpha + ")"; c.fillRect(x0, cy + dy, x1 - x0, 1); }
+    }
+  }
+
+  function sTrophy(c, x, y, t) {
+    var gold = "#F5C518", lite = "#FFE884", deep = "#C2930A";
+    var wood = "#7A3D12", woodDk = "#4E2409", ink = "#2B1B14";
+    t = t || 0;
+
+    // base
+    rect(c, x + 8, y + 26, 16, 4, woodDk);
+    rect(c, x + 10, y + 22, 12, 4, wood);
+    rect(c, x + 10, y + 22, 12, 1, "#96521F");
+    // stem
+    rect(c, x + 14, y + 18, 4, 4, gold);
+    rect(c, x + 14, y + 18, 2, 4, lite);
+    // handles
+    rect(c, x + 4, y + 6, 5, 2, gold);
+    rect(c, x + 4, y + 8, 2, 6, gold);
+    rect(c, x + 4, y + 14, 5, 2, gold);
+    rect(c, x + 23, y + 6, 5, 2, gold);
+    rect(c, x + 26, y + 8, 2, 6, gold);
+    rect(c, x + 23, y + 14, 5, 2, gold);
+    // bowl
+    rect(c, x + 9, y + 5, 14, 12, gold);
+    rect(c, x + 10, y + 17, 12, 2, deep);
+    rect(c, x + 11, y + 6, 3, 9, lite);
+    rect(c, x + 8, y + 3, 16, 2, lite);
+    rect(c, x + 8, y + 2, 16, 1, ink);
+    // the number one
+    rect(c, x + 15, y + 8, 2, 7, deep);
+    rect(c, x + 14, y + 9, 1, 2, deep);
+    rect(c, x + 13, y + 15, 6, 1, deep);
+
+    // gold gets its own twinkle: six stars on staggered phases
+    var pos = [[3, 4], [28, 3], [2, 18], [29, 17], [17, 1], [25, 21], [6, 25]];
+    for (var i = 0; i < pos.length; i++) {
+      var ph = (t * 1.6 + i * 0.9) % 2.6;
+      if (ph > 1) continue;
+      var r = ph < 0.3 ? 1 : (ph < 0.7 ? 2 : 1);
+      star4(c, x + pos[i][0], y + pos[i][1], r, ph < 0.5 ? "#FFFFFF" : lite);
+    }
+  }
+
+  function sMedal(c, x, y, pal, t) {
+    var ink = "#2B1B14";
+    t = t || 0;
+
+    // ribbon tails, drawn before the disc so the disc sits on top
+    for (var j = 0; j < 13; j++) {
+      var span = j < 10 ? 5 : (j === 10 ? 4 : (j === 11 ? 3 : 2));
+      var lx = Math.round(x + 12 - j * 0.5);
+      var rx = Math.round(x + 15 + j * 0.5);
+      rect(c, lx, y + 16 + j, span, 1, pal.ribbon);
+      rect(c, rx, y + 16 + j, span, 1, pal.ribbon);
+      if (span > 2) {
+        rect(c, lx + 1, y + 16 + j, 1, 1, pal.ribbonLt);
+        rect(c, rx + span - 2, y + 16 + j, 1, 1, pal.ribbonLt);
+      }
+    }
+
+    // disc
+    disc(c, x + 16, y + 11, 10, ink);
+    disc(c, x + 16, y + 11, 9, pal.mid);
+    disc(c, x + 16, y + 11, 7, pal.lite);
+    star5(c, x + 12, y + 7, pal.deep);
+    discOutline(c, x + 16, y + 11, 10, ink);
+
+    // basic catch of light, no twinkle
+    sheen(c, x + 16, y + 11, 8, (t * 0.35) % 1, 0.4);
   }
 
   var CANDY = {
@@ -1195,7 +1301,7 @@
   var rankLineEl = document.getElementById("rankLine");
   var boardEl = document.getElementById("board");
   var rankListEl = document.getElementById("rankList");
-  var nickInput = document.getElementById("nickInput");
+  var onboardEl = document.getElementById("onboard");
   var playTitle = document.getElementById("playTitle");
   var statMain = document.getElementById("statMain");
   var statSub = document.getElementById("statSub");
@@ -2080,10 +2186,11 @@
   function paintStamps() {
     totalPtsEl.textContent = profile.total;
     var rank = rankOf(profile.total);
-    rankLineEl.textContent = profile.total > 0
+    var who = profile.nick ? profile.nick + " · " : "";
+    rankLineEl.textContent = who + (profile.total > 0
       ? (rank ? "Bạn đang hạng " + rank : "Chưa lọt top 10 — còn " +
           (DEMO_RANKS[DEMO_RANKS.length - 1][1] - profile.total) + " điểm nữa")
-      : "Chơi để tích điểm";
+      : "chơi để tích điểm");
     Array.prototype.forEach.call(gridEl.children, function (el, i) {
       if (GAMES[i]) el.classList.toggle("cleared", (profile.best[GAMES[i].id] || 0) > 0);
     });
@@ -2221,10 +2328,15 @@
     boardEl.hidden = false;
     buildTabs();
     paintBoard();
+    drawMedals(0);
   }
 
-  var SILVER = ["#8E969E", "#CBD2D8", "#F1F5F8"];
-  var BRONZE = ["#8A4E20", "#C87A3A", "#EBB273"];
+  // Ribbon colours follow the reference sheet: silver on green, bronze on blue.
+  var SILVER = { deep: "#8E979F", mid: "#C6CDD4", lite: "#EDF1F5", ribbon: "#5FBF4A", ribbonLt: "#CBF0BC" };
+  var BRONZE = { deep: "#9C6033", mid: "#CB8A56", lite: "#E9BF97", ribbon: "#4FA3E8", ribbonLt: "#C3E4FF" };
+
+  // Canvases currently on the board, redrawn every frame while it is open.
+  var medalCells = [];
 
   function row(no, who, pts, cls) {
     var li = document.createElement("li");
@@ -2232,11 +2344,10 @@
     var a = document.createElement("span"); a.className = "no";
     if (no === 1 || no === 2 || no === 3) {
       var cv = document.createElement("canvas");
-      cv.width = 24; cv.height = 26;
+      cv.width = 32; cv.height = 32;
       var cc = cv.getContext("2d");
       cc.imageSmoothingEnabled = false;
-      if (no === 1) sTrophy(cc, 0, 0);
-      else sMedal(cc, 0, 0, (no === 2 ? SILVER : BRONZE)[0], (no === 2 ? SILVER : BRONZE)[1], (no === 2 ? SILVER : BRONZE)[2]);
+      medalCells.push({ ctx: cc, rank: no });
       a.appendChild(cv);
     } else {
       a.textContent = no;
@@ -2247,8 +2358,18 @@
     return li;
   }
 
+  function drawMedals(t) {
+    for (var i = 0; i < medalCells.length; i++) {
+      var m = medalCells[i];
+      m.ctx.clearRect(0, 0, 32, 32);
+      if (m.rank === 1) sTrophy(m.ctx, 0, 0, t);
+      else sMedal(m.ctx, 0, 0, m.rank === 2 ? SILVER : BRONZE, t + i * 0.7);
+    }
+  }
+
   function paintBoard() {
     rankListEl.innerHTML = "";
+    medalCells = [];
     var me = profile.nick || "Bạn";
     var cfg = boardTab === "total" ? null : BOARDS[boardTab];
     var demo = cfg ? cfg.demo : DEMO_RANKS;
@@ -2259,7 +2380,7 @@
     for (var i = 0; i < demo.length; i++) { if (mine > demo[i][1]) { myRank = i + 1; break; } }
 
     var placed = false;
-    demo.forEach(function (r, idx) {
+    demo.forEach(function (r, idx) {  // eslint-disable-line
       if (myRank === idx + 1 && !placed) {
         rankListEl.appendChild(row(idx + 1, me + " (bạn)", mine + suffix, "you"));
         placed = true;
@@ -2293,11 +2414,58 @@
   document.getElementById("openBoard").addEventListener("click", openBoard);
   document.getElementById("boardBack").addEventListener("click", backToHub);
 
-  nickInput.value = profile.nick;
-  nickInput.addEventListener("input", function () {
-    profile.nick = this.value.trim();
+  /* ---------- first-run door ---------- */
+
+  var obNick = document.getElementById("obNick");
+  var obErr = document.getElementById("obErr");
+
+  function showOnboard() {
+    obNick.value = profile.nick;
+    obErr.textContent = "";
+    onboardEl.hidden = false;
+    setTimeout(function () { try { obNick.focus(); } catch (e) {} }, 60);
+  }
+
+  function commitNick() {
+    var v = obNick.value.replace(/\s+/g, " ").trim();
+    if (!v) {
+      obErr.textContent = "Nhập một biệt danh đã nhé.";
+      try { obNick.focus(); } catch (e) {}
+      return;
+    }
+    profile.nick = v;
     saveProfile();
+    onboardEl.hidden = true;
+    paintStamps();
+  }
+
+  document.getElementById("obPlay").addEventListener("click", commitNick);
+  obNick.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); commitNick(); }
   });
+  obNick.addEventListener("input", function () { if (obErr.textContent) obErr.textContent = ""; });
+  document.getElementById("editNick").addEventListener("click", showOnboard);
+
+  // Rainbow arc on the door, drawn big.
+  (function () {
+    var c = document.getElementById("obMark").getContext("2d");
+    c.imageSmoothingEnabled = false;
+    var arc = [P.straw, P.orange, P.lemon, P.lime, P.aqua, P.grape];
+    function half(cx, cy, r, col) {
+      c.fillStyle = col;
+      for (var dy = -r; dy <= 0; dy++) {
+        var dx = Math.floor(Math.sqrt(r * r - dy * dy));
+        c.fillRect((cx - dx) | 0, (cy + dy) | 0, (dx * 2 + 1) | 0, 1);
+      }
+    }
+    for (var i = 0; i < 6; i++) half(32, 56, 30 - i * 4, arc[i]);
+    for (var dy = -6; dy <= 0; dy++) {
+      var dx = Math.floor(Math.sqrt(36 - dy * dy));
+      c.clearRect(32 - dx, 56 + dy, dx * 2 + 1, 1);
+    }
+  })();
+
+  if (!profile.nick) showOnboard();
 
   document.getElementById("endAgain").addEventListener("click", function () {
     startRun(active ? active.mode : null);
@@ -2341,6 +2509,7 @@
     if (active && running) active.step(dt);
     if (active) active.draw(ctx);
     else ctx.drawImage(bgSun, 0, 0);
+    if (!boardEl.hidden && medalCells.length) drawMedals(now / 1000);
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
@@ -2359,19 +2528,32 @@
     rect(c, 10, 4, 5, 4, P.ink);
   })();
 
+  // Wordmark is a rainbow arc now, not a lollipop swirl — the game is named
+  // after the road, not the sweet.
   (function () {
     var c = document.getElementById("swirlMark").getContext("2d");
     c.imageSmoothingEnabled = false;
-    disc(c, 14, 14, 13, P.red);
-    swirl(c, 14, 14, 13, P.sun, 0);
-    discOutline(c, 14, 14, 13, P.cream);
+    function halfDisc(ctx2, cx, cy, r, col) {
+      ctx2.fillStyle = col;
+      for (var dy = -r; dy <= 0; dy++) {
+        var dx = Math.floor(Math.sqrt(r * r - dy * dy));
+        ctx2.fillRect((cx - dx) | 0, (cy + dy) | 0, (dx * 2 + 1) | 0, 1);
+      }
+    }
+    var arc = [P.straw, P.orange, P.lemon, P.lime, P.aqua, P.grape];
+    for (var i = 0; i < 6; i++) halfDisc(c, 14, 25, 13 - i * 2, arc[i]);
+    // hollow the centre so it reads as a band rather than a dome
+    for (var dy = -3; dy <= 0; dy++) {
+      var dx = Math.floor(Math.sqrt(9 - dy * dy));
+      c.clearRect(14 - dx, 25 + dy, dx * 2 + 1, 1);
+    }
   })();
 
   (function () {
     // THE ONE LINE TO CHANGE IF THE GAME MOVES.
     // For a printed campaign, point this at a redirect you control instead of
     // straight at the host: boards get printed once, hosts get swapped.
-    var url = "https://nguyengiahan.github.io/";
+    var url = "https://bandocauvong.github.io/";
     var note = document.getElementById("qrNote");
     note.textContent = "Mã trỏ tới link web game công khai. Quét là vào chơi, không cần cài app.";
     var m = null;
