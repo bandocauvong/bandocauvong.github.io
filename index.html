@@ -361,36 +361,6 @@
   .verdict.lose { color: var(--ink-soft); }
   .board .note { margin: 0; font-size: .78rem; line-height: 1.45; color: var(--ink-soft); }
 
-  .caption {
-    max-width: var(--max); width: 100%; font-size: .7rem; line-height: 1.5;
-    color: rgba(43,27,20,.62); text-align: center;
-  }
-
-  /* ---------- Notes ---------- */
-
-  .notes { background: var(--berry); border-top: 4px solid var(--ink); padding: 54px 20px 76px; color: var(--dim); }
-  .inner { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 26px; }
-  .notes h3 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; color: var(--cream); }
-  .notes h4 { margin: 0 0 10px; font-size: .66rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--sun); }
-  .notes p { margin: 0; font-size: .92rem; line-height: 1.65; color: var(--dim); max-width: 62ch; }
-  .notes p strong { color: var(--cream); }
-  .notes ul { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 7px; }
-  .notes li { font-size: .89rem; line-height: 1.55; color: var(--dim); }
-  .notes li strong { color: var(--cream); font-weight: 600; }
-  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(236px, 1fr)); gap: 16px; }
-  .card { background: var(--berry-lt); box-shadow: inset 0 0 0 2px rgba(255,248,231,.12); padding: 18px; }
-  .scroll-x { overflow-x: auto; }
-  table { border-collapse: collapse; width: 100%; min-width: 470px; font-size: .86rem; }
-  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid rgba(255,248,231,.13); }
-  th { font-size: .64rem; letter-spacing: .12em; text-transform: uppercase; color: var(--sun); font-weight: 700; }
-  td { color: var(--dim); }
-  td:first-child { color: var(--cream); font-weight: 600; }
-  td.num { font-variant-numeric: tabular-nums; }
-  .flag { font-weight: 700; }
-  .flag.ok { color: #4BD6A0; }
-  .flag.warn { color: var(--sun); }
-  .flag.bad { color: #FF7A93; }
-
   @media (max-width: 380px) { .grid { grid-template-columns: 1fr; } .mission.wide { flex-direction: row; } }
   /* Short viewports squeeze the stage to its minimum; squeeze the board too so
      the Play button stays on screen. */
@@ -462,7 +432,7 @@
         <div></div>
       </div>
       <div class="tabs" id="boardTabs"></div>
-      <p class="demo-note">Dữ liệu mẫu dựng cho bản demo — không phải thành tích của người chơi thật.</p>
+      <p class="demo-note">Bảng khởi tạo — chưa nối dữ liệu người chơi thật.</p>
       <ul class="ranks" id="rankList"></ul>
       <div class="board-actions">
         <button class="btn" id="shareRank" type="button">Tạo ảnh khoe</button>
@@ -508,64 +478,7 @@
     </section>
   </div>
 
-  <p class="caption">Bản demo kỹ thuật. Màu và element dựng theo hệ đỏ–vàng và dải sản phẩm của Chupa Chups, nhưng chưa dùng bộ nhận diện chính thức; logo, font và tên vị kẹo cần client cấp.</p>
 </main>
-
-<section class="notes">
-  <div class="inner">
-    <h3>Đánh giá task sau khi mở rộng thành 5 nhiệm vụ</h3>
-    <p>Bản demo trên là <strong>4 mini-game chơi được thật</strong>, chạy trong trình duyệt điện thoại, không cài app, không backend. Nhiệm vụ thứ 5 để trống đúng như bạn đang cân nhắc.</p>
-    <p>Nói thẳng phần bạn cần biết: <strong>một mini-game thì nhẹ, bốn mini-game thì không.</strong> Công sức không cộng tuyến tính vì mỗi game là một hệ điều khiển, một bộ art và một vòng cân bằng độ khó riêng. Ước lượng thay đổi từ “vài ngày” thành “vài tuần”.</p>
-
-    <div class="scroll-x">
-      <table>
-        <thead>
-          <tr><th>Nhiệm vụ</th><th>Điều khiển</th><th class="num">Công sức bản thật</th><th>Rủi ro</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Chém Kẹo</td><td>Vuốt</td><td class="num">2–3 ngày</td><td class="flag ok">Thấp</td></tr>
-          <tr><td>Ghép Kẹo</td><td>Kéo đổi ô</td><td class="num">5–8 ngày</td><td class="flag bad">Cao — cân bằng độ khó và sinh bàn chơi được</td></tr>
-          <tr><td>Chạy Kẹo</td><td>Đổi làn, nhảy</td><td class="num">4–6 ngày</td><td class="flag warn">Vừa — dễ gây say xe</td></tr>
-          <tr><td>Landmark 81</td><td>Chạm</td><td class="num">2–3 ngày</td><td class="flag ok">Thấp</td></tr>
-          <tr><td>Vỏ hub + tem + QR</td><td>—</td><td class="num">3–4 ngày</td><td class="flag ok">Thấp</td></tr>
-          <tr><td>Pixel art toàn bộ</td><td>—</td><td class="num">6–10 ngày</td><td class="flag bad">Cao — cần hoạ sĩ pixel, không phải dev</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p>Cộng lại: <strong>khoảng 4–6 tuần</strong> cho một dev cộng một hoạ sĩ pixel, chưa tính vòng duyệt của client. Vẫn khả thi, nhưng đây là một dự án nhỏ chứ không còn là một cái mockup.</p>
-
-    <div class="cols">
-      <div class="card">
-        <h4>Nếu cần gọn lại</h4>
-        <ul>
-          <li>Giữ <strong>2 game</strong>: Chém Kẹo và Landmark 81. Rẻ nhất, rủi ro thấp nhất, vẫn đủ tạo cảm giác “có bộ sưu tập”.</li>
-          <li>Ba nhiệm vụ còn lại để dạng <strong>“mở khoá theo tuần”</strong> — vừa giảm tải, vừa tạo lý do quay lại.</li>
-          <li>Ghép Kẹo là món đắt nhất. Nếu phải cắt một, cắt món này trước.</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h4>Chưa làm, và nên nằm ngoài scope demo</h4>
-        <ul>
-          <li>Bảng xếp hạng chung — cần backend và chống gian lận</li>
-          <li>Tài khoản người dùng</li>
-          <li>Đổi thưởng thật — kéo theo thể lệ khuyến mại và pháp lý</li>
-          <li>Âm thanh</li>
-        </ul>
-      </div>
-    </div>
-
-    <div>
-      <h4>Bốn thứ quyết định thành bại, không nằm ở code</h4>
-      <ul>
-        <li><strong>Thưởng là thật hay ảo.</strong> Nếu quà có giá trị thật, đây thành chương trình khuyến mại: cần thể lệ, đăng ký, đối soát mã. Khối lượng đó lớn hơn cả phần game.</li>
-        <li><strong>QR in ra rồi không sửa được.</strong> Bắt buộc trỏ qua một link trung gian đổi hướng được, không trỏ thẳng vào link game.</li>
-        <li><strong>Say xe.</strong> Người chơi đang ngồi trên xe đang chạy. Game Chạy Kẹo là món rủi ro nhất; cần test thật trên xe trước khi chốt.</li>
-        <li><strong>Máy yếu và mạng chậm.</strong> Toàn bộ demo này vẽ bằng pixel ở độ phân giải thấp một phần cũng vì lý do đó — nền phức tạp đều được render sẵn một lần rồi blit, nên vẫn mượt trên Android tầm thấp.</li>
-      </ul>
-    </div>
-  </div>
-</section>
 
 <script>
 (function () {
@@ -1354,8 +1267,8 @@
   } catch (e) {}
   function saveProfile() { try { localStorage.setItem("chupa.profile", JSON.stringify(profile)); } catch (e) {} }
 
-  // Demo ladder. Clearly labelled as sample data in the UI so nobody reads these
-  // as real players.
+  // Seed ladder. Flagged in the UI as placeholder so nobody reads these as
+  // real players.
   var DEMO_RANKS = [
     ["BinBon2k", 4820], ["kẹo_mút_hà_nội", 4415], ["TuanAnh_98", 4080],
     ["MeoConCanTho", 3760], ["haha_lolli", 3495], ["Nguyen_Vy", 3210],
