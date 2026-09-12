@@ -2167,6 +2167,7 @@
         }
       }
       this.phase = "fall";
+      snd("drop");
     },
 
     hasMove: function () {
@@ -2395,7 +2396,7 @@
     unit: "MÉT",
     subInit: "0 KẸO",
     LANES: [47, 80, 113],
-    lane: 1, px: 80, dist: 0, coins: 0, speed: 92, obs: [], spawnD: 0, jump: 0, dead: false, downY: 0, downX: 0,
+    lane: 1, px: 80, dist: 0, mile: 0, coins: 0, speed: 92, obs: [], spawnD: 0, jump: 0, dead: false, downY: 0, downX: 0,
 
     legend: [
       { icon: function (g) { sLolly(g, 10, 14, P.straw, 0); sBear(g, 26, 18, P.lime); }, text: "Kẹo trên đường · nhặt được +6 mét" },
@@ -2418,7 +2419,7 @@
     },
 
     reset: function () {
-      this.lane = 1; this.px = this.LANES[1]; this.dist = 0; this.coins = 0;
+      this.lane = 1; this.px = this.LANES[1]; this.dist = 0; this.mile = 0; this.coins = 0;
       this.speed = 92; this.obs = []; this.spawnD = 40; this.jump = 0; this.dead = false;
     },
 
@@ -2448,11 +2449,14 @@
       if (this.dead) return;
       this.speed = 92 + this.dist * 0.09;
       this.dist += this.speed * dt * 0.35;
+      if (this.dist - this.mile >= 100) { this.mile += 100; snd("milestone"); }
       statMain.textContent = Math.floor(this.dist);
       statSub.textContent = this.coins + " KẸO";
 
       this.px += (this.LANES[this.lane] - this.px) * Math.min(1, dt * 12);
-      if (this.jump > 0) this.jump -= dt;
+      // Bắt đúng khoảnh khắc chạm đất: cú nhảy không có tiếng tiếp đất
+      // nghe như bị cắt mất nửa sau.
+      if (this.jump > 0) { this.jump -= dt; if (this.jump <= 0) snd("land"); }
 
       this.spawnD -= this.speed * dt;
       if (this.spawnD <= 0) {
@@ -2741,6 +2745,7 @@
     serve: function (dy) {
       this.ball = { x: BW / 2, y: BH / 2, vx: (Math.random() - 0.5) * 70, vy: 128 * dy };
       this.serveT = 0.75;
+      snd("serve");
     },
 
     clampPaddle: function (x) {
@@ -2801,15 +2806,17 @@
     },
 
     point: function (who) {
-      snd("point");
       if (who === 1) this.s1++; else this.s2++;
       statMain.textContent = this.s1;
       statSub.textContent = this.s1 + " - " + this.s2;
       if (this.s1 >= this.goal || this.s2 >= this.goal) {
         this.over = true;
-        finishRun(this.s1);
+        finishRun(this.s1);      // tiếng thắng/thua để finishRun lo, tránh kêu hai lần
         return;
       }
+      // Ghi bàn và bị thủng lưới phải khác tiếng, không thì không biết ai vừa ăn.
+      if (Math.max(this.s1, this.s2) === this.goal - 1) snd("matchPoint");
+      else snd(who === 1 ? "pointWin" : "pointLose");
       this.serve(who === 1 ? -1 : 1);
     },
 
@@ -3192,8 +3199,8 @@
   var AUDIO = (function () {
     var AC = window.AudioContext || window.webkitAudioContext;
     var ctx = null, master = null, noiseBuf = null;
-    var on = true, voices = 0, last = {};
-    var MAXV = 14;
+    var on = true, voices = 0, last = {}, streak = {};
+    var MAXV = 16;
 
     try { on = localStorage.getItem("chupa.mute") !== "1"; } catch (e) {}
 
@@ -3201,9 +3208,20 @@
       if (!AC) return;
       if (!ctx) {
         try { ctx = new AC(); } catch (e) { ctx = null; return; }
+        /* Bộ hãm đỉnh. Trước đây phải để tổng âm thật nhỏ (0.22) vì nhiều
+           tiếng chồng nhau sẽ vượt biên và rè trên loa điện thoại. Có bộ hãm
+           thì mở to hơn được mà đỉnh vẫn bị chặn lại, nên nghe dày và chắc
+           hơn hẳn thay vì mỏng và xa. */
+        var lim = ctx.createDynamicsCompressor();
+        lim.threshold.value = -10;
+        lim.knee.value = 0;
+        lim.ratio.value = 20;
+        lim.attack.value = 0.003;
+        lim.release.value = 0.18;
         master = ctx.createGain();
-        master.gain.value = 0.22;
-        master.connect(ctx.destination);
+        master.gain.value = 0.34;
+        master.connect(lim);
+        lim.connect(ctx.destination);
       }
       if (ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} }
     }
@@ -3217,26 +3235,60 @@
     }
     function freeSlot(t) { setTimeout(function () { voices = Math.max(0, voices - 1); }, t * 1000 + 60); }
 
-    // Một giọng: dao động có trượt cao độ, bao biên tăng nhanh giảm dần.
+    function cents(f, c) { return f * Math.pow(2, c / 1200); }
+
+    /* Một giọng. Ba thứ thêm so với bản đầu, đều nhằm cho đỡ nghe như máy:
+         thick — nhân đôi dao động lệch vài cent, tiếng dày lên
+         sub   — chồng sóng sin thấp một quãng tám, tiếng có thân
+         vary  — lệch cao độ ngẫu nhiên, để tiếng lặp lại không giống hệt nhau */
     function tone(o) {
       if (!ready() || !slot()) return;
       var t0 = ctx.currentTime, d = o.d || 0.08;
       // Trả giọng đặt lịch NGAY, trước khi dựng nút. Nếu đặt ở cuối mà giữa
-      // chừng ném lỗi thì giọng đó kẹt vĩnh viễn, đủ mười bốn lần là câm hết.
+      // chừng ném lỗi thì giọng đó kẹt vĩnh viễn, đủ mười sáu lần là câm hết.
       freeSlot(d);
-      var osc = ctx.createOscillator(), g = ctx.createGain();
-      osc.type = o.type || "square";
-      osc.frequency.setValueAtTime(o.f, t0);
-      if (o.f2 && o.f2 !== o.f) {
-        if (o.glide === "exp") osc.frequency.exponentialRampToValueAtTime(Math.max(1, o.f2), t0 + d);
-        else osc.frequency.linearRampToValueAtTime(Math.max(1, o.f2), t0 + d);
-      }
+
+      var off = o.vary ? (Math.random() * 2 - 1) * o.vary : 0;
+      var f1 = cents(o.f, off), f2 = o.f2 ? cents(o.f2, off) : 0;
       var peak = (o.g === undefined ? 0.5 : o.g);
+
+      var g = ctx.createGain();
       g.gain.setValueAtTime(0.0001, t0);
       g.gain.exponentialRampToValueAtTime(peak, t0 + Math.min(0.012, d * 0.25));
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
-      osc.connect(g); g.connect(master);
-      osc.start(t0); osc.stop(t0 + d + 0.02);
+      g.connect(master);
+
+      var n = o.thick ? 2 : 1;
+      for (var i = 0; i < n; i++) {
+        var det = i === 0 ? 0 : (o.thick || 7);
+        var osc = ctx.createOscillator();
+        osc.type = o.type || "square";
+        osc.frequency.setValueAtTime(cents(f1, det), t0);
+        if (f2 && f2 !== f1) {
+          if (o.glide === "exp") osc.frequency.exponentialRampToValueAtTime(Math.max(1, cents(f2, det)), t0 + d);
+          else osc.frequency.linearRampToValueAtTime(Math.max(1, cents(f2, det)), t0 + d);
+        }
+        osc.connect(g);
+        osc.start(t0); osc.stop(t0 + d + 0.02);
+      }
+
+      if (o.sub) {
+        var so = ctx.createOscillator(), sg = ctx.createGain();
+        so.type = "sine";
+        so.frequency.setValueAtTime(f1 / 2, t0);
+        if (f2 && f2 !== f1) so.frequency.linearRampToValueAtTime(Math.max(1, f2 / 2), t0 + d);
+        sg.gain.setValueAtTime(0.0001, t0);
+        sg.gain.exponentialRampToValueAtTime(peak * o.sub, t0 + 0.012);
+        sg.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+        so.connect(sg); sg.connect(master);
+        so.start(t0); so.stop(t0 + d + 0.02);
+      }
+    }
+
+    // Tiếng đụng có sức nặng: nhiễu cho phần vỡ, sóng sin tụt nhanh cho phần thân.
+    function thud(f, d, g) {
+      noise({ f: f * 2.2, f2: f * 0.6, d: d, g: g, lp: true });
+      tone({ f: f, f2: f * 0.45, d: d * 0.9, type: "sine", g: g * 0.8, glide: "exp" });
     }
 
     // Tiếng đụng/nổ: nhiễu trắng qua bộ lọc, dùng cho vỡ, đâm, bom.
@@ -3263,11 +3315,14 @@
       src.start(t0); src.stop(t0 + d + 0.02);
     }
 
-    function seq(notes, type, step, gain) {
+    function seq(notes, type, step, gain, opt) {
+      opt = opt || {};
       for (var i = 0; i < notes.length; i++) {
         (function (n, i) {
           setTimeout(function () {
-            tone({ f: n, type: type || "square", d: step * 1.6, g: gain === undefined ? 0.42 : gain });
+            tone({ f: n, type: type || "square", d: step * 1.6,
+                   g: gain === undefined ? 0.42 : gain,
+                   thick: opt.thick, sub: opt.sub });
           }, i * step * 1000);
         })(notes[i], i);
       }
@@ -3275,6 +3330,16 @@
 
     // Nấc thang âm nhạc: nhân tần số theo nửa cung, dùng cho chuỗi nổ cao dần.
     function semi(base, n) { return base * Math.pow(2, n / 12); }
+
+    /* Thang liên tiếp. Ăn liền tay thì tiếng cao dần, ngừng quá `ms` thì tụt
+       về đáy. Đây là thứ làm tiếng ăn kẹo nghe "đã" thay vì lặp mãi một nốt —
+       cùng một tiếng nhưng người chơi nghe ra mình đang chơi tốt dần. */
+    function ladder(key, ms, max) {
+      var t = Date.now(), s = streak[key];
+      var n = (s && t - s.t < ms) ? Math.min(max, s.n + 1) : 0;
+      streak[key] = { t: t, n: n };
+      return n;
+    }
 
     // Van chặn lặp: hai tiếng cùng loại cách nhau dưới ms thì bỏ tiếng sau.
     function gate(key, ms) {
@@ -3286,62 +3351,84 @@
 
     var BANK = {
       /* ---- giao diện ---- */
-      tap:        function () { if (gate("tap", 40)) tone({ f: 620, f2: 880, d: 0.05, type: "square", g: 0.26 }); },
-      confirm:    function () { seq([523, 784], "triangle", 0.08, 0.4); },
+      tap:        function () { if (gate("tap", 40)) tone({ f: 620, f2: 880, d: 0.05, type: "square", g: 0.24, vary: 25 }); },
+      confirm:    function () { seq([523, 784], "triangle", 0.08, 0.4, { thick: 6 }); },
       chime:      function () { seq([784, 1047, 1319], "triangle", 0.07, 0.34); },
-      toggleOn:   function () { seq([523, 880], "square", 0.06, 0.36); },
+      toggleOn:   function () { seq([523, 880], "square", 0.06, 0.36, { thick: 6 }); },
+      whoosh:     function () { noise({ f: 380, f2: 2600, d: 0.2, g: 0.13 }); },
+      // Vào ván: hai nốt "sẵn sàng — chạy", ngắn để không chắn tay người chơi.
+      go:         function () { tone({ f: 392, d: 0.09, type: "square", g: 0.3, thick: 8 });
+                                setTimeout(function () {
+                                  tone({ f: 784, d: 0.17, type: "square", g: 0.36, thick: 8, sub: 0.45 });
+                                }, 105); },
 
       /* ---- Ghép Kẹo ---- */
-      pick:       function () { if (gate("pick", 50)) tone({ f: 520, d: 0.04, type: "sine", g: 0.3 }); },
-      swapOk:     function () { tone({ f: 440, f2: 660, d: 0.07, type: "triangle", g: 0.32 }); },
-      swapBad:    function () { tone({ f: 220, f2: 150, d: 0.12, type: "square", g: 0.3 }); },
+      pick:       function () { if (gate("pick", 50)) tone({ f: 560, d: 0.045, type: "sine", g: 0.3, vary: 30 }); },
+      deselect:   function () { tone({ f: 420, f2: 310, d: 0.05, type: "sine", g: 0.2 }); },
+      swapOk:     function () { tone({ f: 440, f2: 660, d: 0.07, type: "triangle", g: 0.32, thick: 6 }); },
+      swapBad:    function () { tone({ f: 220, f2: 150, d: 0.12, type: "square", g: 0.28, sub: 0.4 }); },
+      // Kẹo rơi xuống lấp chỗ trống. Lệch cao độ rộng để một trận mưa kẹo
+      // nghe ra nhiều viên chứ không phải một tiếng nhân bản.
+      drop:       function () { if (gate("drop", 55)) tone({ f: 300, f2: 205, d: 0.06, type: "sine", g: 0.19, vary: 70 }); },
       // Chuỗi càng dài tiếng càng cao — đúng yêu cầu "+1 +2 combo nối tiếp".
       clear:      function (chain) {
         var n = Math.min(12, chain || 0);
-        tone({ f: semi(523, n * 2), f2: semi(784, n * 2), d: 0.09, type: "square", g: 0.34 });
+        tone({ f: semi(523, n * 2), f2: semi(784, n * 2), d: 0.09, type: "square", g: 0.34, thick: 7 });
         if (n >= 2) setTimeout(function () {
           tone({ f: semi(1047, n * 2), d: 0.07, type: "triangle", g: 0.26 });
         }, 60);
       },
-      makePower:  function () { seq([659, 988, 1319], "triangle", 0.05, 0.3); },
+      makePower:  function () { seq([659, 988, 1319], "triangle", 0.05, 0.3, { thick: 8 }); },
       line:       function () { tone({ f: 300, f2: 1400, d: 0.18, type: "sawtooth", g: 0.26, glide: "exp" });
                                 noise({ f: 1200, f2: 3000, d: 0.16, g: 0.2 }); },
-      bomb:       function () { noise({ f: 900, f2: 90, d: 0.3, g: 0.45, lp: true });
-                                tone({ f: 160, f2: 50, d: 0.28, type: "sawtooth", g: 0.3, glide: "exp" }); },
-      rainbow:    function () { seq([523, 659, 784, 988, 1319, 1568], "triangle", 0.055, 0.32); },
-      wipe:       function () { seq([392, 523, 659, 784, 1047, 1319, 1568, 2093], "square", 0.05, 0.3);
+      bomb:       function () { thud(170, 0.32, 0.5);
+                                noise({ f: 2200, f2: 400, d: 0.18, g: 0.22 }); },
+      rainbow:    function () { seq([523, 659, 784, 988, 1319, 1568], "triangle", 0.055, 0.32, { thick: 7 }); },
+      wipe:       function () { seq([392, 523, 659, 784, 1047, 1319, 1568, 2093], "square", 0.05, 0.3, { thick: 8 });
                                 noise({ f: 600, f2: 4000, d: 0.5, g: 0.18 }); },
-      noMoves:    function () { seq([392, 330, 262], "triangle", 0.14, 0.36); },
+      noMoves:    function () { seq([392, 330, 262], "triangle", 0.14, 0.36, { sub: 0.4 }); },
 
       /* ---- Chạy Kẹo ---- */
-      jump:       function () { tone({ f: 300, f2: 720, d: 0.09, type: "square", g: 0.32 }); },
-      lane:       function () { if (gate("lane", 70)) tone({ f: 480, f2: 560, d: 0.04, type: "square", g: 0.2 }); },
+      jump:       function () { tone({ f: 300, f2: 720, d: 0.09, type: "square", g: 0.32, sub: 0.45 }); },
+      land:       function () { if (gate("land", 90)) thud(150, 0.11, 0.3); },
+      lane:       function () { if (gate("lane", 70)) tone({ f: 480, f2: 560, d: 0.04, type: "square", g: 0.18, vary: 30 }); },
+      // Ăn liền tay thì cao dần tám nấc rồi chững, ngừng gần một giây thì về đáy.
       coin:       function () { if (!gate("coin", 45)) return;
-                                tone({ f: 988, d: 0.05, type: "square", g: 0.3 });
-                                setTimeout(function () { tone({ f: 1319, d: 0.09, type: "square", g: 0.3 }); }, 50); },
+                                var n = ladder("coin", 900, 7);
+                                tone({ f: semi(988, n), d: 0.05, type: "square", g: 0.3, vary: 8 });
+                                setTimeout(function () {
+                                  tone({ f: semi(1319, n), d: 0.09, type: "square", g: 0.3 });
+                                }, 50); },
+      milestone:  function () { seq([784, 1047], "triangle", 0.07, 0.3, { thick: 7 }); },
 
       /* ---- Landmark 81 ---- */
       flap:       function () { if (!gate("flap", 60)) return;
-                                tone({ f: 380, f2: 640, d: 0.07, type: "triangle", g: 0.3 });
+                                tone({ f: 380, f2: 640, d: 0.07, type: "triangle", g: 0.3, vary: 20 });
                                 noise({ f: 1800, d: 0.06, g: 0.12 }); },
-      pass:       function () { tone({ f: 880, f2: 1175, d: 0.08, type: "sine", g: 0.3 }); },
+      // Qua cột liên tiếp cũng lên thang, nhưng cửa sổ rộng hơn vì cột thưa hơn kẹo.
+      pass:       function () { var n = ladder("pass", 2600, 9);
+                                tone({ f: semi(880, n), f2: semi(1175, n), d: 0.08, type: "sine", g: 0.32, thick: 6 }); },
 
       /* ---- Đối Kẹo ---- */
-      paddle:     function () { tone({ f: 420, f2: 520, d: 0.05, type: "square", g: 0.32 }); },
-      wall:       function () { if (gate("wall", 40)) tone({ f: 260, d: 0.04, type: "square", g: 0.22 }); },
-      point:      function () { seq([660, 990], "triangle", 0.07, 0.36); },
+      paddle:     function () { tone({ f: 420, f2: 520, d: 0.05, type: "square", g: 0.32, vary: 35, sub: 0.35 }); },
+      wall:       function () { if (gate("wall", 40)) tone({ f: 260, d: 0.04, type: "square", g: 0.2, vary: 40 }); },
+      serve:      function () { tone({ f: 300, f2: 500, d: 0.09, type: "triangle", g: 0.24 }); },
+      pointWin:   function () { seq([660, 990], "triangle", 0.07, 0.36, { thick: 6 }); },
+      pointLose:  function () { seq([440, 330], "triangle", 0.08, 0.3, { sub: 0.4 }); },
+      // Bàn quyết định: nốt căng, để người chơi biết sắp hết trận mà không cần nhìn.
+      matchPoint: function () { seq([740, 740, 988], "square", 0.09, 0.32, { thick: 9 }); },
 
       /* ---- kết ván ---- */
-      crash:      function () { noise({ f: 1400, f2: 120, d: 0.32, g: 0.5, lp: true });
-                                tone({ f: 300, f2: 60, d: 0.34, type: "sawtooth", g: 0.34, glide: "exp" }); },
-      win:        function () { seq([523, 659, 784, 1047], "triangle", 0.1, 0.4); },
-      lose:       function () { seq([392, 330, 262, 196], "triangle", 0.12, 0.36); },
-      record:     function () { seq([784, 988, 1175, 1568, 1175, 1568], "triangle", 0.09, 0.38); },
+      crash:      function () { thud(260, 0.34, 0.5);
+                                noise({ f: 3000, f2: 500, d: 0.22, g: 0.24 }); },
+      win:        function () { seq([523, 659, 784, 1047], "triangle", 0.1, 0.4, { thick: 7, sub: 0.3 }); },
+      lose:       function () { seq([392, 330, 262, 196], "triangle", 0.12, 0.36, { sub: 0.45 }); },
+      record:     function () { seq([784, 988, 1175, 1568, 1175, 1568], "triangle", 0.09, 0.38, { thick: 8, sub: 0.3 }); },
       boardUp:    function () { tone({ f: 220, f2: 520, d: 0.22, type: "sine", g: 0.24 }); },
 
       /* ---- bấm giờ hành trình ---- */
-      tripStart:  function () { seq([523, 784, 1047], "triangle", 0.09, 0.4); },
-      tripStop:   function () { seq([1047, 784, 523], "triangle", 0.11, 0.4); }
+      tripStart:  function () { seq([523, 784, 1047], "triangle", 0.09, 0.4, { thick: 7 }); },
+      tripStop:   function () { seq([1047, 784, 523], "triangle", 0.11, 0.4, { sub: 0.35 }); }
     };
 
     function play(name, arg) {
@@ -3372,7 +3459,7 @@
   var SND_BTN = {
     obPlay: "confirm",
     tripStart: "tripStart", tripStop: "tripStop",
-    shareRank: "chime", tripShare: "chime", endShare: "chime",
+    shareRank: "chime", tripShare: "chime",
     shareDl: "chime", fsDl: "chime"
   };
   document.addEventListener("pointerdown", function (e) {
@@ -3508,6 +3595,7 @@
     ovEnd.hidden = true;
     resetEndBoard();
     running = true;
+    snd("go");
   }
 
   function finishRun(scoreVal) {
