@@ -459,14 +459,23 @@
     font-size: .64rem; line-height: 1.3; color: #8A7566;
     word-break: break-all; overflow-wrap: anywhere;
   }
-  .qrtext button {
-    align-self: flex-start; margin-top: 3px;
-    background: var(--ink); color: var(--cream); border: none;
-    font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-    padding: 7px 12px; cursor: pointer;
+  /* Link và nút sao chép nằm cùng một hàng. Dòng link co giãn và được phép
+     xuống dòng, còn nút giữ nguyên cỡ (flex: none) để không bị bóp méo. */
+  .qrurl-row { display: flex; align-items: center; justify-content: center; gap: 7px; max-width: 100%; }
+  .qrcopy {
+    flex: none; width: 28px; height: 28px; padding: 0;
+    display: grid; place-items: center;
+    background: var(--ink); color: var(--cream); border: none; cursor: pointer;
   }
-  .qrtext button:hover { background: var(--red); }
-  .qrtext button:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .qrcopy:hover { background: var(--red); }
+  .qrcopy:active { transform: translateY(1px); }
+  .qrcopy:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .qrcopy svg { width: 15px; height: 15px; display: block; }
+  .qrcopy .ico-done { display: none; }
+  .qrcopy.done { background: #3E8E41; }
+  .qrcopy.done .ico-copy { display: none; }
+  .qrcopy.done .ico-done { display: block; }
+  .qrcopy.fail { background: var(--red); }
 
   /* ---------- Play ---------- */
 
@@ -667,8 +676,20 @@
       <canvas id="qrCanvas" width="120" height="120" aria-label="Mã QR dẫn tới web game"></canvas>
       <div class="qrtext">
         <span id="qrNote">Mã trỏ tới link web game công khai. Quét là vào chơi, không cần cài app.</span>
-        <span class="qrurl" id="qrTarget"></span>
-        <button id="copyLink" type="button">Sao chép link</button>
+        <span class="qrurl-row">
+          <span class="qrurl" id="qrTarget"></span>
+          <button class="qrcopy" id="copyLink" type="button" aria-label="Sao chép link" title="Sao chép link">
+            <svg class="ico-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="12" height="12" rx="1.5"/>
+              <path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"/>
+            </svg>
+            <svg class="ico-done" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 12.5 9 17.5 20 6.5"/>
+            </svg>
+          </button>
+        </span>
       </div>
     </div>
     <button class="btn ghost" id="qrClose" type="button">Đóng</button>
@@ -4452,16 +4473,34 @@
     for (var r = 0; r < n; r++) for (var col = 0; col < n; col++) {
       if (m[r][col]) c.fillRect(col + quiet, r + quiet, 1, 1);
     }
-    document.getElementById("copyLink").addEventListener("click", function () {
-      var btn = this;
-      function ok() { btn.textContent = "Đã sao chép"; setTimeout(function () { btn.textContent = "Sao chép link"; }, 1600); }
+    /* Nút giờ chỉ là một biểu tượng nên không còn chỗ đặt chữ báo kết quả.
+       Báo bằng cách đổi biểu tượng và màu nền, chữ thì để ở nhãn trợ năng
+       cho người dùng trình đọc màn hình vẫn nghe được. */
+    var copyBtn = document.getElementById("copyLink");
+    var copyT = null;
+    function copyState(cls, label) {
+      copyBtn.classList.remove("done", "fail");
+      if (cls) copyBtn.classList.add(cls);
+      copyBtn.setAttribute("aria-label", label);
+      copyBtn.setAttribute("title", label);
+      if (copyT) clearTimeout(copyT);
+      copyT = setTimeout(function () {
+        copyBtn.classList.remove("done", "fail");
+        copyBtn.setAttribute("aria-label", "Sao chép link");
+        copyBtn.setAttribute("title", "Sao chép link");
+      }, 1800);
+    }
+    copyBtn.addEventListener("click", function () {
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(url).then(ok, function () { btn.textContent = "Không sao chép được"; });
+          navigator.clipboard.writeText(url).then(
+            function () { copyState("done", "Đã sao chép"); },
+            function () { copyState("fail", "Không sao chép được"); }
+          );
           return;
         }
       } catch (e) {}
-      btn.textContent = "Không sao chép được";
+      copyState("fail", "Không sao chép được");
     });
   })();
 
