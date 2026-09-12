@@ -3260,7 +3260,12 @@
       if (!on) return;
       if (!bgm) bgm = document.getElementById("bgm");
       if (!bgm || !bgm.paused) return;
-      bgm.volume = 0.34;                 // dưới hiệu ứng để tiếng game vẫn cắt qua được
+      /* Con số này đo ra chứ không đoán. Bản nhạc nén rất chặt: RMS 0.227
+         (-12.9 dB), đỉnh 1.07. Ở mức 0.34 thì cường độ duy trì của nhạc là
+         0.077, trong khi một hiệu ứng chỉ kêu 50-100ms nên RMS chỉ ~0.034
+         — nhạc lấn át gấp hơn hai lần. Hạ xuống 0.12 thì nhạc còn 0.027,
+         dưới đỉnh hiệu ứng khoảng bốn lần, đủ để tiếng game cắt qua. */
+      bgm.volume = 0.12;
       var pr = bgm.play();
       // Trình duyệt vẫn có quyền từ chối; im lặng bỏ qua rồi thử lại ở chạm sau.
       if (pr && pr.catch) pr.catch(function () {});
