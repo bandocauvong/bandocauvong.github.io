@@ -1668,7 +1668,7 @@
      nhìn ra là cùng một thế giới chứ không phải bốn bản rời. */
   var bgSky = (function () {
     var o = offscreen(BW, BH), g = o.g;
-    var BX = 10, BY = 75, CE = 20, COLS = 7, ROWS = 9;
+    var BX = 10, BY = 52, CE = 20, COLS = 7, ROWS = 9;   // BY phải khớp với OY của match
     var bw = COLS * CE, bh = ROWS * CE;
 
     // tường tiệm: giấy dán sọc dọc nhạt
@@ -1684,18 +1684,25 @@
       }
     }
 
-    // kệ trưng bày phía trên
-    rect(g, 0, 0, BW, 44, P.red);
-    rect(g, 0, 38, BW, 6, "#A80020");            // mặt dưới kệ, cho ra khối
-    rect(g, 0, 44, BW, 4, P.ink);
-    for (var f = 12; f < BW; f += 34) rect(g, f, 44, 6, 6, "#7A1020");   // chân kệ
+    /* Kệ thu từ 48 xuống 37 điểm ảnh để nhường chỗ cho bàn cờ dâng lên giữa
+       khung. Bỏ luôn chân kệ — không còn chỗ, mà bỏ đi nhìn cũng gọn hơn. */
+    rect(g, 0, 0, BW, 34, P.red);
+    rect(g, 0, 29, BW, 5, "#A80020");            // mặt dưới kệ, cho ra khối
+    rect(g, 0, 34, BW, 3, P.ink);
 
-    // mặt quầy phía dưới
+    // mặt quầy phía dưới, nay dày 44 điểm ảnh nên cân được với kệ trên
     var cy = BY + bh + 8;
     rect(g, 0, cy, BW, BH - cy, "#F49CC4");
     rect(g, 0, cy, BW, 3, "#FFD3E9");
     rect(g, 0, cy + 3, BW, 1, "#C97BA3");
-    for (var q = 4; q < BW; q += 14) rect(g, q, cy + 8, 7, 2, "rgba(255,255,255,.4)");
+    // vài viên kẹo bày trên quầy, để dải dưới không trống trải
+    var jar = [[22, "#FF5FA8"], [40, P.lemon], [120, P.aqua], [138, P.lime]];
+    for (var j = 0; j < jar.length; j++) {
+      disc(g, jar[j][0], cy + 16, 5, jar[j][1]);
+      discOutline(g, jar[j][0], cy + 16, 5, P.ink);
+      rect(g, jar[j][0] - 2, cy + 13, 2, 2, "rgba(255,255,255,.7)");
+    }
+    for (var q = 4; q < BW; q += 14) rect(g, q, cy + 30, 7, 2, "rgba(255,255,255,.35)");
 
     // khay đựng kẹo bọc quanh bàn cờ
     rect(g, BX - 7, BY - 7, bw + 14, bh + 14, "#E4517F");
@@ -2012,7 +2019,12 @@
     control: "Chạm để chọn, rồi vuốt sang ô bên cạnh. Chơi tới khi bàn hết nước.",
     unit: "ĐIỂM",
     subInit: "ĐANG CÀY",
-    COLS: 7, ROWS: 9, CELL: 20, OX: 10, OY: 75,
+    /* OY = 52 chứ không phải 75. Bàn cờ cao 9*20 = 180, nên tâm nó nằm ở
+       52 + 90 = 142 — đúng bằng tâm khung (BH/2 = 142). Đặt ở 75 thì tâm rơi
+       xuống 165, thấp hơn tâm khung 23 điểm ảnh và nhìn ra ngay là lệch xuống.
+       Nguyên nhân cũ: kệ trên chiếm 48 điểm ảnh còn quầy dưới chỉ 21.
+       ĐỔI SỐ NÀY THÌ PHẢI ĐỔI CẢ `BY` trong bgSky — hai chỗ phải khớp. */
+    COLS: 7, ROWS: 9, CELL: 20, OX: 10, OY: 52,
 
     board: [], score: 0, moves: Infinity, swaps: 0, ended: false,
     // idle -> swap -> (swapback | clear -> fall -> clear ...) -> idle
@@ -2425,7 +2437,7 @@
     draw: function (c) {
       c.drawImage(bgSky, 0, 0);          // kệ, quầy và khay đã nằm sẵn trong nền
 
-      for (var s = 0; s < 6; s++) drawTileBig(c, s, 16 + s * 26, 21, 2);
+      for (var s = 0; s < 6; s++) drawTileBig(c, s, 16 + s * 26, 17, 2);   // giữa kệ 34px
 
       var BX = this.OX, BY = this.OY, CE = this.CELL;
 
