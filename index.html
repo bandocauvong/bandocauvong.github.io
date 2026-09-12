@@ -2441,10 +2441,16 @@
 
       var BX = this.OX, BY = this.OY, CE = this.CELL;
 
-      /* Linh vật nhô lên sau khay kẹo, vẽ trước khi kẹp vùng bàn cờ.
-         +7 chứ không hơn: khung cao 284, khay hết ở 262, bust cao 18 — đặt
-         thấp hơn là bị cắt mất chân ảnh. */
-      heroBust(c, H_CHEER, BW / 2, BY + this.ROWS * CE + 7);
+      /* Linh vật đứng sau quầy, ĐỦ CẢ NGƯỜI chứ không cắt đầu-vai nữa.
+         Thân cao 48 mà khoảng dưới khay chỉ có 44, nên phải chịu chồm lên
+         vành dưới của khay 5 điểm ảnh. Đã tính kỹ: chân ở 282 thì thân trải
+         234..282 — **không đụng một ô kẹo nào** (ô kẹo kết thúc ở 232) và không
+         tràn đáy khung. Chỉ phủ lên vành khay, nhìn ra là đứng trước khay.
+         Bề ngang 44 nằm ở 58..102, không che mấy viên kẹo bày trên quầy
+         (ở 22, 40, 120, 138). */
+      var footY = 282;
+      rect(c, BW / 2 - 10, footY - 3, 20, 3, "rgba(43,27,20,.18)");   // bóng đổ cho đứng có trọng lượng
+      drawHero(c, H_CHEER, BW / 2, footY);
 
       c.save();
       c.beginPath();
