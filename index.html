@@ -816,6 +816,11 @@
 
 </main>
 
+<!-- Nhạc nền. preload="none" là điểm mấu chốt: file 2,8 MB này KHÔNG được
+     tải lúc mở trang, chỉ nạp khi người chơi chạm lần đầu. Nhờ vậy thời gian
+     vào game không đổi một giây nào so với khi chưa có nhạc. -->
+<audio id="bgm" loop preload="none" src="music.mp3"></audio>
+
 <script>
 (function () {
   "use strict";
@@ -2397,6 +2402,7 @@
     subInit: "0 KẸO",
     LANES: [47, 80, 113],
     lane: 1, px: 80, dist: 0, mile: 0, coins: 0, speed: 92, obs: [], spawnD: 0, jump: 0, dead: false, downY: 0, downX: 0,
+    pops: [],
 
     legend: [
       { icon: function (g) { sLolly(g, 10, 14, P.straw, 0); sBear(g, 26, 18, P.lime); }, text: "Kẹo trên đường · nhặt được +6 mét" },
@@ -2421,6 +2427,7 @@
     reset: function () {
       this.lane = 1; this.px = this.LANES[1]; this.dist = 0; this.mile = 0; this.coins = 0;
       this.speed = 92; this.obs = []; this.spawnD = 40; this.jump = 0; this.dead = false;
+      this.pops = [];
     },
 
     pointer: function (kind, x, y) {
@@ -2449,9 +2456,19 @@
       if (this.dead) return;
       this.speed = 92 + this.dist * 0.09;
       this.dist += this.speed * dt * 0.35;
-      if (this.dist - this.mile >= 100) { this.mile += 100; snd("milestone"); }
+      if (this.dist - this.mile >= 100) {
+        this.mile += 100;
+        snd("milestone");
+        this.pops.push({ x: this.px, y: 196, life: 1 });   // số bay lên khớp với tiếng
+      }
       statMain.textContent = Math.floor(this.dist);
       statSub.textContent = this.coins + " KẸO";
+
+      for (var q = this.pops.length - 1; q >= 0; q--) {
+        this.pops[q].y -= 30 * dt;
+        this.pops[q].life -= dt * 0.9;
+        if (this.pops[q].life <= 0) this.pops.splice(q, 1);
+      }
 
       this.px += (this.LANES[this.lane] - this.px) * Math.min(1, dt * 12);
       // Bắt đúng khoảnh khắc chạm đất: cú nhảy không có tiếng tiếp đất
@@ -2528,6 +2545,13 @@
       else if (this.jump > 0) frame = H_JUMP;
       else frame = H_RUN + (Math.floor(this.dist * 0.25) % 4);   // ~8 bước mỗi giây
       if (!drawHero(c, frame, this.px, py - lift + 12)) sBear(c, this.px, py - lift, P.red);
+
+      // Vẽ viền tối trước rồi chữ vàng lên trên, để số đọc được trên mọi nền đường.
+      for (var w = 0; w < this.pops.length; w++) {
+        var pw = this.pops[w];
+        pxText(c, "+100", pw.x, pw.y + 1, P.ink, 2);
+        pxText(c, "+100", pw.x, pw.y - 1, P.sun, 2);
+      }
     }
   };
 
@@ -3224,6 +3248,25 @@
         lim.connect(ctx.destination);
       }
       if (ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} }
+      bgmStart();
+    }
+
+    /* ---- nhạc nền ----
+       Tách hẳn khỏi bộ tổng hợp: nhạc là thẻ <audio> thường, không đi qua
+       AudioContext. Lý do: file dài, cho trình duyệt tự lo việc giải mã và
+       phát lặp thì nhẹ hơn nhiều so với nhồi vào bộ đệm. */
+    var bgm = null;
+    function bgmStart() {
+      if (!on) return;
+      if (!bgm) bgm = document.getElementById("bgm");
+      if (!bgm || !bgm.paused) return;
+      bgm.volume = 0.34;                 // dưới hiệu ứng để tiếng game vẫn cắt qua được
+      var pr = bgm.play();
+      // Trình duyệt vẫn có quyền từ chối; im lặng bỏ qua rồi thử lại ở chạm sau.
+      if (pr && pr.catch) pr.catch(function () {});
+    }
+    function bgmStop() {
+      if (bgm) { try { bgm.pause(); } catch (e) {} }
     }
 
     function ready() { return on && ctx && master && ctx.state === "running"; }
@@ -3446,6 +3489,7 @@
         on = !on;
         try { localStorage.setItem("chupa.mute", on ? "0" : "1"); } catch (e) {}
         if (on) { unlock(); play("toggleOn"); }
+        else bgmStop();
         return on;
       }
     };

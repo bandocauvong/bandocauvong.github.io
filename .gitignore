@@ -11,9 +11,15 @@ character*.png
 sprites/
 sprites.png
 
-# Âm thanh: chưa nối vào game, và music.mp3 đang 2,8 MB cần rút gọn trước.
-# Bỏ ignore khi làm phần âm thanh.
+# Âm thanh. Chặn hết trước, rồi mở đúng file đang dùng — để một file nhạc
+# thử nghiệm bỏ quên trong thư mục không vô tình lên web công khai.
+# Hiệu ứng thì tổng hợp thẳng bằng mã, không cần file nào.
+#
+# LƯU Ý: .gitignore không hiểu chú thích cuối dòng — viết "!music.mp3  # ghi chú"
+# thì cả cụm bị coi là tên file và dòng đó thành vô nghĩa. Chú thích phải đứng riêng.
+# music.mp3 là nhạc nền đang dùng, 2,8 MB — xem mục 18 BAN-GIAO.md
 *.mp3
+!music.mp3
 
 # Tài liệu nội bộ: có chi tiết chiến dịch của khách và ghi chú lỗ hổng còn tồn.
 # Repo này là web công khai nên không đưa lên.
