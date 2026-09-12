@@ -4617,6 +4617,29 @@
     var p = toBase(e);
     active.pointer(kind, p.x, p.y, e.pointerId);
   }
+  /* iOS Safari KHONG chiu tat phong-to-khi-cham-hai-lan chi bang
+     `touch-action: none`. Gia tri duoc thiet ke cho viec do la `manipulation`,
+     nhung man choi lai can `none` de nuot luon thao tac keo va vuot. Nen phai
+     chan THANG o su kien.
+
+     An toan voi loi choi, ba ly do:
+       1. Tren iOS thu tu la `pointerdown` ROI MOI `touchstart`, va `pointerup`
+          ROI MOI `touchend` — game da nhan xong cu cham truoc khi ta chan.
+       2. `preventDefault` o day chi bo hanh vi mac dinh cua trinh duyet:
+          phong to, cuon, va cap su kien chuot gia.
+       3. Canvas KHONG co listener `click` nao (chi pointer event, xem ngay ben
+          duoi) nen viec nuot click gia cung khong mat gi.
+
+     Loi lo ro nhat o Landmark 81, noi nguoi choi cham lien tuc nhanh nhat nen
+     hai cu cham de roi dung vao nguong "cham hai lan" cua iOS. */
+  /* Co y CHI chan `touchstart` va `touchmove`, KHONG chan `touchend`.
+     Chan `touchstart` la du de tat phong to (trinh duyet quyet dinh phong to
+     tu cu cham thu hai), con de `touchend` yen thi khong dung gi toi viec nha
+     ngon — thu ma pong va chay keo dua vao de tha vot va ket thuc cu vuot. */
+  ["touchstart", "touchmove"].forEach(function (n) {
+    canvas.addEventListener(n, function (e) { e.preventDefault(); }, { passive: false });
+  });
+
   canvas.addEventListener("pointerdown", function (e) {
     send("down", e);
     if (canvas.setPointerCapture) { try { canvas.setPointerCapture(e.pointerId); } catch (err) {} }
