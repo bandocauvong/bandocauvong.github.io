@@ -99,9 +99,12 @@
     width: 100%; max-width: var(--max);
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
   }
-  /* Nút bật/tắt tiếng đứng giữa thanh đầu trang, đủ to để bấm bằng ngón tay. */
+  /* Hai nút tiếng đứng giữa thanh đầu trang: một cho nhạc nền, một cho hiệu
+     ứng. Tách ra vì hai thứ này lấn nhau, người chơi hay muốn tắt nhạc mà
+     vẫn giữ hiệu ứng. Đủ to để bấm bằng ngón tay. */
+  .sndgroup { display: flex; gap: 6px; margin-left: auto; flex: none; }
   .sndbtn {
-    flex: none; margin-left: auto; width: 34px; height: 34px; padding: 0; cursor: pointer;
+    flex: none; width: 32px; height: 32px; padding: 0; cursor: pointer;
     display: grid; place-items: center; line-height: 1;
     font-size: 1rem; color: var(--ink);
     background: var(--cream); border: 3px solid var(--ink);
@@ -111,6 +114,10 @@
   .sndbtn:active { transform: translateY(3px); box-shadow: 0 0 0 rgba(43,27,20,.35); }
   .sndbtn:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
   .sndbtn.off { color: var(--ink-soft); background: rgba(255,248,231,.55); }
+  .sndbtn svg { width: 17px; height: 17px; display: block; }
+  /* Tắt thì gạch chéo, không chỉ làm mờ — nhìn một cái là biết ngay nút nào đang tắt. */
+  .sndbtn .slash { display: none; }
+  .sndbtn.off .slash { display: block; }
 
   .wordmark {
     display: flex; align-items: center; gap: 9px;
@@ -454,9 +461,16 @@
   .qrtext { display: flex; flex-direction: column; gap: 4px; min-width: 0; align-items: center; text-align: center; }
   .qrtext strong { font-family: var(--font-display); font-size: .98rem; line-height: 1.15; }
   .qrtext span { font-size: .73rem; line-height: 1.42; color: var(--ink-soft); }
-  .qrurl {
+  /* Dòng link đóng khung riêng: nền trắng chữ đen cho dễ đọc, viền chỉ 1px
+     và rất nhạt để khung không đập vào mắt hơn cả mã QR bên trên. */
+  /* Selector phai la `.qrtext .qrurl` chu khong phai `.qrurl`: luat
+     `.qrtext span` o tren co do uu tien cao hon mot lop don, nen dong mau
+     trong `.qrurl` truoc day khong he co tac dung. */
+  .qrtext .qrurl {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: .64rem; line-height: 1.3; color: #8A7566;
+    font-size: .64rem; line-height: 1.35; color: #111;
+    background: #FFFFFF; border: 2px solid rgba(43,27,20,.24);
+    padding: 6px 9px;
     word-break: break-all; overflow-wrap: anywhere;
   }
   /* Link và nút sao chép nằm cùng một hàng. Dòng link co giãn và được phép
@@ -715,9 +729,23 @@
       <canvas class="swirl" id="swirlMark" width="28" height="28"></canvas>
       <span>BẢN ĐỒ <b>CẦU VỒNG</b></span>
     </div>
-    <button class="sndbtn" id="sndBtn" type="button" aria-label="Bật tắt tiếng">
-      <span id="sndIcon">♪</span>
-    </button>
+    <div class="sndgroup">
+      <button class="sndbtn" id="musicBtn" type="button" aria-label="Bật tắt nhạc nền">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M9 17V5l11-2v12"/><circle cx="6.5" cy="17.5" r="2.8"/><circle cx="17.5" cy="15.5" r="2.8"/>
+          <path class="slash" d="M3 3 21 21"/>
+        </svg>
+      </button>
+      <button class="sndbtn" id="sfxBtn" type="button" aria-label="Bật tắt hiệu ứng âm thanh">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11 5 6.5 9H3v6h3.5L11 19V5z"/><path d="M15.2 9.2a4 4 0 0 1 0 5.6"/>
+          <path d="M18 6.4a8 8 0 0 1 0 11.2"/>
+          <path class="slash" d="M3 3 21 21"/>
+        </svg>
+      </button>
+    </div>
     <div class="stamps">
       <span>Điểm</span>
       <b id="totalPts">0</b>
@@ -3244,10 +3272,16 @@
   var AUDIO = (function () {
     var AC = window.AudioContext || window.webkitAudioContext;
     var ctx = null, master = null, noiseBuf = null;
-    var on = true, voices = 0, last = {}, streak = {};
+    // Hai cờ riêng. Giữ nguyên khoá cũ "chupa.mute" cho hiệu ứng để người
+    // đã tắt tiếng từ trước không bị bật lại.
+    var sfxOn = true, musicOn = true;
+    var voices = 0, last = {}, streak = {};
     var MAXV = 16;
 
-    try { on = localStorage.getItem("chupa.mute") !== "1"; } catch (e) {}
+    try {
+      sfxOn = localStorage.getItem("chupa.mute") !== "1";
+      musicOn = localStorage.getItem("chupa.mutemusic") !== "1";
+    } catch (e) {}
 
     function unlock() {
       if (!AC) return;
@@ -3278,15 +3312,17 @@
        phát lặp thì nhẹ hơn nhiều so với nhồi vào bộ đệm. */
     var bgm = null;
     function bgmStart() {
-      if (!on) return;
+      if (!musicOn) return;
       if (!bgm) bgm = document.getElementById("bgm");
       if (!bgm || !bgm.paused) return;
       /* Con số này đo ra chứ không đoán. Bản nhạc nén rất chặt: RMS 0.227
          (-12.9 dB), đỉnh 1.07. Ở mức 0.34 thì cường độ duy trì của nhạc là
          0.077, trong khi một hiệu ứng chỉ kêu 50-100ms nên RMS chỉ ~0.034
-         — nhạc lấn át gấp hơn hai lần. Hạ xuống 0.12 thì nhạc còn 0.027,
-         dưới đỉnh hiệu ứng khoảng bốn lần, đủ để tiếng game cắt qua. */
-      bgm.volume = 0.12;
+         — nhạc lấn át gấp hơn hai lần.
+         Hạ xuống 0.12 vẫn còn to khi thử trên điện thoại thật, nên hạ tiếp
+         còn 0.06: nhạc chỉ còn 0.0136, dưới đỉnh hiệu ứng hơn bảy lần. Loa
+         điện thoại nhỏ nên nhạc phải lùi sâu hơn mức tính trên giấy. */
+      bgm.volume = 0.06;
       var pr = bgm.play();
       // Trình duyệt vẫn có quyền từ chối; im lặng bỏ qua rồi thử lại ở chạm sau.
       if (pr && pr.catch) pr.catch(function () {});
@@ -3295,7 +3331,7 @@
       if (bgm) { try { bgm.pause(); } catch (e) {} }
     }
 
-    function ready() { return on && ctx && master && ctx.state === "running"; }
+    function ready() { return sfxOn && ctx && master && ctx.state === "running"; }
 
     function slot() {
       if (voices >= MAXV) return false;
@@ -3501,7 +3537,7 @@
     };
 
     function play(name, arg) {
-      if (!on) return;
+      if (!sfxOn) return;
       unlock();
       var f = BANK[name];
       if (f) { try { f(arg); } catch (e) {} }
@@ -3510,13 +3546,19 @@
     return {
       unlock: unlock,
       play: play,
-      isOn: function () { return on; },
-      toggle: function () {
-        on = !on;
-        try { localStorage.setItem("chupa.mute", on ? "0" : "1"); } catch (e) {}
-        if (on) { unlock(); play("toggleOn"); }
-        else bgmStop();
-        return on;
+      isSfxOn: function () { return sfxOn; },
+      isMusicOn: function () { return musicOn; },
+      toggleSfx: function () {
+        sfxOn = !sfxOn;
+        try { localStorage.setItem("chupa.mute", sfxOn ? "0" : "1"); } catch (e) {}
+        if (sfxOn) { unlock(); play("toggleOn"); }
+        return sfxOn;
+      },
+      toggleMusic: function () {
+        musicOn = !musicOn;
+        try { localStorage.setItem("chupa.mutemusic", musicOn ? "0" : "1"); } catch (e) {}
+        if (musicOn) { unlock(); bgmStart(); } else bgmStop();
+        return musicOn;
       }
     };
   })();
@@ -3536,21 +3578,24 @@
     AUDIO.unlock();
     var t = e.target, b = t && t.closest ? t.closest("button") : null;
     if (!b || b.disabled) return;
-    if (b.id === "sndBtn") return;            // nút này tự lo tiếng của nó
+    if (b.id === "musicBtn" || b.id === "sfxBtn") return;   // hai nút này tự lo tiếng của chúng
     snd(SND_BTN[b.id] || "tap");
   }, true);
 
   (function () {
-    var btn = document.getElementById("sndBtn"), ico = document.getElementById("sndIcon");
-    function paint() {
-      var on = AUDIO.isOn();
-      btn.classList.toggle("off", !on);
-      ico.textContent = on ? "\u266a" : "\u2715";
-      btn.setAttribute("aria-pressed", on ? "true" : "false");
-      btn.title = on ? "Tắt tiếng" : "Bật tiếng";
+    function wire(id, isOn, toggle, tenBat, tenTat) {
+      var btn = document.getElementById(id);
+      function paint() {
+        var on = isOn();
+        btn.classList.toggle("off", !on);
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+        btn.title = on ? tenTat : tenBat;
+      }
+      btn.addEventListener("click", function () { toggle(); paint(); });
+      paint();
     }
-    btn.addEventListener("click", function () { AUDIO.toggle(); paint(); });
-    paint();
+    wire("musicBtn", AUDIO.isMusicOn, AUDIO.toggleMusic, "Bật nhạc nền", "Tắt nhạc nền");
+    wire("sfxBtn", AUDIO.isSfxOn, AUDIO.toggleSfx, "Bật hiệu ứng", "Tắt hiệu ứng");
   })();
 
 
