@@ -3284,9 +3284,12 @@
     } catch (e) {}
 
     function unlock() {
-      if (!AC) return;
-      if (!ctx) {
-        try { ctx = new AC(); } catch (e) { ctx = null; return; }
+      // Không có WebAudio thì vẫn phải chạy tiếp xuống bgmStart, không thì
+      // nhạc chẳng bao giờ bật. Trước đây thoát sớm ngay ở đây là một lỗi.
+      if (AC && !ctx) {
+        try { ctx = new AC(); } catch (e) { ctx = null; }
+      }
+      if (ctx && !master) {
         /* Bộ hãm đỉnh. Trước đây phải để tổng âm thật nhỏ (0.22) vì nhiều
            tiếng chồng nhau sẽ vượt biên và rè trên loa điện thoại. Có bộ hãm
            thì mở to hơn được mà đỉnh vẫn bị chặn lại, nên nghe dày và chắc
@@ -3302,7 +3305,7 @@
         master.connect(lim);
         lim.connect(ctx.destination);
       }
-      if (ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} }
+      if (ctx && ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} }
       bgmStart();
     }
 
@@ -3310,19 +3313,47 @@
        Tách hẳn khỏi bộ tổng hợp: nhạc là thẻ <audio> thường, không đi qua
        AudioContext. Lý do: file dài, cho trình duyệt tự lo việc giải mã và
        phát lặp thì nhẹ hơn nhiều so với nhồi vào bộ đệm. */
-    var bgm = null;
+    var bgm = null, bgmGain = null, bgmRouted = false;
+
+    /* Mức nhạc. Đo ra chứ không đoán: bản nhạc nén rất chặt, RMS 0.227
+       (-12.9 dB). Ở 0.06 thì nhạc còn 0.0136, dưới đỉnh một hiệu ứng
+       (0.102) hơn bảy lần. Chỉnh ở ĐÚNG chỗ này. */
+    var MUSIC_VOL = 0.06;
+
+    /* ===== LỖI iOS — ĐỪNG QUAY LẠI CÁCH CŨ =====
+       iOS Safari **bỏ qua hoàn toàn `audio.volume`**: thuộc tính đó chỉ đọc
+       được, gán vào không có tác dụng gì, vì Apple bắt âm lượng phải do nút
+       cứng quyết định. Hậu quả: trên iPhone nhạc chạy hết cỡ 1.0 trong khi
+       hiệu ứng nhỏ đúng mức, vì hiệu ứng đi qua GainNode của WebAudio còn
+       nhạc thì không. Hạ `bgm.volume` bao nhiêu lần cũng vô ích trên iPhone.
+
+       Cách chữa: cho nhạc đi qua chính WebAudio. **GainNode thì iOS có nghe.** */
+    function routeBgm() {
+      if (bgmRouted || !ctx || !bgm) return;
+      try {
+        // Chỉ được gọi MỘT lần cho mỗi thẻ audio, gọi lần hai là ném lỗi.
+        var src = ctx.createMediaElementSource(bgm);
+        bgmGain = ctx.createGain();
+        bgmGain.gain.value = MUSIC_VOL;
+        src.connect(bgmGain);
+        bgmGain.connect(ctx.destination);
+        // Đã có GainNode lo âm lượng thì trả thẻ về 1, không nhân hai lần.
+        bgm.volume = 1;
+        bgmRouted = true;
+      } catch (e) {
+        bgmRouted = false;
+      }
+    }
+
     function bgmStart() {
       if (!musicOn) return;
       if (!bgm) bgm = document.getElementById("bgm");
-      if (!bgm || !bgm.paused) return;
-      /* Con số này đo ra chứ không đoán. Bản nhạc nén rất chặt: RMS 0.227
-         (-12.9 dB), đỉnh 1.07. Ở mức 0.34 thì cường độ duy trì của nhạc là
-         0.077, trong khi một hiệu ứng chỉ kêu 50-100ms nên RMS chỉ ~0.034
-         — nhạc lấn át gấp hơn hai lần.
-         Hạ xuống 0.12 vẫn còn to khi thử trên điện thoại thật, nên hạ tiếp
-         còn 0.06: nhạc chỉ còn 0.0136, dưới đỉnh hiệu ứng hơn bảy lần. Loa
-         điện thoại nhỏ nên nhạc phải lùi sâu hơn mức tính trên giấy. */
-      bgm.volume = 0.06;
+      if (!bgm) return;
+      routeBgm();
+      // Đường dự phòng cho trình duyệt không có WebAudio. Chỉ dùng khi CHƯA
+      // nối được GainNode, nếu không âm lượng bị nhân hai lần thành quá nhỏ.
+      if (!bgmRouted) bgm.volume = MUSIC_VOL;
+      if (!bgm.paused) return;
       var pr = bgm.play();
       // Trình duyệt vẫn có quyền từ chối; im lặng bỏ qua rồi thử lại ở chạm sau.
       if (pr && pr.catch) pr.catch(function () {});
