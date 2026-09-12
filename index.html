@@ -2828,7 +2828,14 @@
 
       // the sprite hangs centred on this.y, so the feet line sits half a body
       // lower; mirrored so she faces the way the pipes come from
-      if (!drawHero(c, H_FLY, 46, (this.y | 0) + 17, 1, true)) sGoat(c, 46, this.y | 0, this.vy < -20);
+      /* Thua thì đổi sang khung hoa mắt chóng mặt — đúng khung đang dùng cho
+         bên thua ở Đối Kẹo và cho lúc đâm ở Chạy Kẹo, không phải vẽ thêm.
+         **Không lật ngang nữa**: lúc bay thì lật cho quay về phía cột, còn lúc
+         thua thì phải quay mặt về phía người chơi mới thấy được cái mặt chóng mặt.
+         Không cần bù toạ độ: cả hai khung đều canh đáy ô nên thân giữ nguyên chỗ,
+         khung chóng mặt chỉ cao thêm 5 điểm ảnh về phía đỉnh. */
+      var fFrame = this.dead ? H_CRASH : H_FLY;
+      if (!drawHero(c, fFrame, 46, (this.y | 0) + 17, 1, !this.dead)) sGoat(c, 46, this.y | 0, this.vy < -20);
 
       for (q = 0; q < this.pops.length; q++) {
         var po = this.pops[q];
