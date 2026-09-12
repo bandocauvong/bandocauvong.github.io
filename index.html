@@ -97,8 +97,20 @@
 
   .topbar {
     width: 100%; max-width: var(--max);
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
   }
+  /* Nút bật/tắt tiếng đứng giữa thanh đầu trang, đủ to để bấm bằng ngón tay. */
+  .sndbtn {
+    flex: none; margin-left: auto; width: 34px; height: 34px; padding: 0; cursor: pointer;
+    display: grid; place-items: center; line-height: 1;
+    font-size: 1rem; color: var(--ink);
+    background: var(--cream); border: 3px solid var(--ink);
+    box-shadow: 0 3px 0 rgba(43,27,20,.35);
+    transition: transform .1s, box-shadow .1s, background .2s;
+  }
+  .sndbtn:active { transform: translateY(3px); box-shadow: 0 0 0 rgba(43,27,20,.35); }
+  .sndbtn:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+  .sndbtn.off { color: var(--ink-soft); background: rgba(255,248,231,.55); }
 
   .wordmark {
     display: flex; align-items: center; gap: 9px;
@@ -682,6 +694,9 @@
       <canvas class="swirl" id="swirlMark" width="28" height="28"></canvas>
       <span>BẢN ĐỒ <b>CẦU VỒNG</b></span>
     </div>
+    <button class="sndbtn" id="sndBtn" type="button" aria-label="Bật tắt tiếng">
+      <span id="sndIcon">♪</span>
+    </button>
     <div class="stamps">
       <span>Điểm</span>
       <b id="totalPts">0</b>
@@ -1956,6 +1971,8 @@
         else if (r < (acc += SP_RATE.bomb)) t.sp = "bomb";
         else if (r < (acc += SP_RATE.col)) t.sp = "col";
         else if (r < acc + SP_RATE.row) t.sp = "row";
+        // Tiếng báo vừa rơi xuống một viên có phép — hiếm nên không ồn.
+        if (t.sp) snd("makePower");
       }
       return t;
     },
@@ -2004,6 +2021,7 @@
         // Tapping a neighbour of the lit cell swaps too — easier than dragging
         // accurately on a small screen.
         if (this.sel && this.adjacent(this.sel, cell)) { this.beginSwap(this.sel, cell); return; }
+        snd("pick");
         this.sel = cell; this.dragFrom = cell; this.glow = 0;
         return;
       }
@@ -2058,16 +2076,20 @@
         if (!t || !t.sp) continue;
         var r, c;
         if (t.sp === "row") {
+          snd("line");
           self.beams.push({ kind: "row", idx: cell.r, life: 0.45 });
           for (c = 0; c < self.COLS; c++) push(cell.r, c);
         } else if (t.sp === "col") {
+          snd("line");
           self.beams.push({ kind: "col", idx: cell.c, life: 0.45 });
           for (r = 0; r < self.ROWS; r++) push(r, cell.c);
         } else if (t.sp === "bomb") {
+          snd("bomb");
           self.beams.push({ kind: "bomb", r: cell.r, c: cell.c, life: 0.45 });
           for (r = cell.r - 1; r <= cell.r + 1; r++)
             for (c = cell.c - 1; c <= cell.c + 1; c++) push(r, c);
         } else if (t.sp === "color") {
+          snd("rainbow");
           self.beams.push({ kind: "color", r: cell.r, c: cell.c, life: 0.6 });
           for (r = 0; r < self.ROWS; r++) for (c = 0; c < self.COLS; c++) {
             if (self.board[r][c] && self.board[r][c].t === t.t) push(r, c);
@@ -2082,6 +2104,7 @@
       for (var r = 0; r < this.ROWS; r++) for (var c = 0; c < this.COLS; c++) {
         if (this.board[r][c]) cells.push({ r: r, c: c });
       }
+      snd("wipe");
       this.beams.push({ kind: "all", life: 0.9 });
       this.clearCells(cells, 4);
     },
@@ -2093,6 +2116,7 @@
     },
 
     clearCells: function (ms, chain) {
+      snd("clear", chain);
       var gain = Math.round(ms.length * 12 * (1 + chain * 0.35));
       this.score += gain;
       statMain.textContent = this.score;
@@ -2170,6 +2194,7 @@
       // Endless: the run only stops when the board is genuinely dead.
       if (!this.ended && !this.hasMove()) {
         this.ended = true;
+        snd("noMoves");
         var self = this;
         setTimeout(function () { finishRun(self.score); }, 280);
       }
@@ -2215,12 +2240,14 @@
               return;
             }
             if (this.findMatches().length) {
+              snd("swapOk");
               this.swaps++;
               statSub.textContent = this.swaps + " NƯỚC";
               this.chain = 0;
               this.beginClear();
             } else {
               // illegal swap: carry both back where they came from
+              snd("swapBad");
               this.swapCells(this.swapA, this.swapB);
               this.phase = "swapback"; this.anim = 0;
             }
@@ -2399,8 +2426,13 @@
       if (kind === "down") { this.downY = y; this.downX = x; return; }
       if (kind === "up") {
         var dy = y - this.downY, dx = x - this.downX;
-        if (dy < -18 && Math.abs(dy) > Math.abs(dx)) { if (this.jump <= 0) this.jump = 0.52; return; }
-        if (Math.abs(dx) > 14) { this.lane = Math.max(0, Math.min(2, this.lane + (dx > 0 ? 1 : -1))); return; }
+        if (dy < -18 && Math.abs(dy) > Math.abs(dx)) { if (this.jump <= 0) { this.jump = 0.52; snd("jump"); } return; }
+        if (Math.abs(dx) > 14) {
+          var nl = Math.max(0, Math.min(2, this.lane + (dx > 0 ? 1 : -1)));
+          if (nl !== this.lane) snd("lane");
+          this.lane = nl;
+          return;
+        }
         // A tap goes straight to the lane nearest the finger. Stepping one lane
         // per tap made the middle lane unreachable from either edge.
         var best = 0, bd = Infinity;
@@ -2442,9 +2474,9 @@
         if (o.y > BH + 24) { this.obs.splice(i, 1); continue; }
         var ox = this.LANES[o.lane];
         if (Math.abs(ox - this.px) < 13 && Math.abs(o.y - py) < 13) {
-          if (o.type === "coin") { this.coins++; this.dist += 6; this.obs.splice(i, 1); }
-          else if (o.type === "low") { if (this.jump <= 0) { this.dead = true; finishRun(Math.floor(this.dist)); return; } }
-          else { this.dead = true; finishRun(Math.floor(this.dist)); return; }
+          if (o.type === "coin") { snd("coin"); this.coins++; this.dist += 6; this.obs.splice(i, 1); }
+          else if (o.type === "low") { if (this.jump <= 0) { this.dead = true; snd("crash"); finishRun(Math.floor(this.dist)); return; } }
+          else { this.dead = true; snd("crash"); finishRun(Math.floor(this.dist)); return; }
         }
       }
     },
@@ -2546,6 +2578,7 @@
       if (kind !== "down" || this.dead) return;
       this.started = true;
       this.vy = -108;
+      snd("flap");
       // Bụi hồng nhỏ bung ra dưới thân, hơi dạt xuống như luồng khí bị đẩy.
       for (var i = 0; i < 8; i++) {
         var a = Math.random() * Math.PI * 2;
@@ -2585,17 +2618,18 @@
         p.x -= speed * dt;
         if (!p.passed && p.x + 22 < 46) {
           p.passed = true;
+          snd("pass");
           this.score++;
           statMain.textContent = this.score;
           this.pops.push({ x: 46, y: this.y - 16, life: 1 });
         }
         if (p.x < -30) { this.pipes.splice(i, 1); this.addPipe(this.pipes[this.pipes.length - 1].x + 82); }
         if (46 + 11 > p.x && 46 - 11 < p.x + 22) {
-          if (this.y - 10 < p.top || this.y + 10 > p.top + p.gap) { this.dead = true; finishRun(this.score); return; }
+          if (this.y - 10 < p.top || this.y + 10 > p.top + p.gap) { this.dead = true; snd("crash"); finishRun(this.score); return; }
         }
       }
       if (this.y < 12) { this.y = 12; if (this.vy < 0) this.vy = 0; }
-      if (this.y > BH - 16) { this.dead = true; finishRun(this.score); return; }
+      if (this.y > BH - 16) { this.dead = true; snd("crash"); finishRun(this.score); return; }
     },
 
     // Classic Flappy pipe: a shaft plus a wider lip at the gap end.
@@ -2749,6 +2783,7 @@
       b.vx = Math.sin(ang) * speed;
       b.vy = Math.cos(ang) * speed * (fromBottom ? -1 : 1);
       b.y = fromBottom ? py - this.R - 1 : py + this.PH + this.R + 1;
+      snd("paddle");
       for (var i = 0; i < 6; i++) {
         var a = Math.random() * Math.PI * 2;
         this.sparks.push({ x: b.x, y: b.y, vx: Math.cos(a) * 40, vy: Math.sin(a) * 40, life: 0.35 });
@@ -2766,6 +2801,7 @@
     },
 
     point: function (who) {
+      snd("point");
       if (who === 1) this.s1++; else this.s2++;
       statMain.textContent = this.s1;
       statSub.textContent = this.s1 + " - " + this.s2;
@@ -2793,8 +2829,8 @@
       b.x += b.vx * dt;
       b.y += b.vy * dt;
 
-      if (b.x < this.WALL + this.R) { b.x = this.WALL + this.R; b.vx = -b.vx; }
-      if (b.x > BW - this.WALL - this.R) { b.x = BW - this.WALL - this.R; b.vx = -b.vx; }
+      if (b.x < this.WALL + this.R) { b.x = this.WALL + this.R; b.vx = -b.vx; snd("wall"); }
+      if (b.x > BW - this.WALL - this.R) { b.x = BW - this.WALL - this.R; b.vx = -b.vx; snd("wall"); }
 
       this.bounce(this.p1, this.P1Y, true);
       this.bounce(this.p2, this.P2Y, false);
@@ -3075,6 +3111,7 @@
   function startTrip() {
     if (profile.trip.at > 0) return;
     profile.trip.at = Date.now();
+    snd("tripStart");
     saveProfile();
     paintTripClock();
   }
@@ -3084,6 +3121,7 @@
     if (!t.at) return;
     var ms = Date.now() - t.at;
     t.at = 0;
+    snd("tripStop");
     var a = Number(tripFrom.value), b = Number(tripTo.value);
     var km = kmBetween(a, b);
     t.ms += ms;
@@ -3134,6 +3172,230 @@
     rect(c, 17, 11, 1, 8, P.red);
     rect(c, 17, 18, 6, 1, P.ink);
   })();
+
+
+  /* =========================================================
+     Âm thanh
+
+     Tổng hợp thẳng bằng WebAudio, **không tải một byte nào**. Ba file mp3 sẵn
+     có không dùng được: music.mp3 nặng 2,8 MB, jump.mp3 dài 3,2 giây cho một
+     tiếng hiệu ứng. Mạng yếu ngoài đường thì tải âm thanh là hỏng trải nghiệm.
+
+     Ba ràng buộc phải giữ:
+     1. `AudioContext` chỉ được tạo/đánh thức **trong một cử chỉ của người dùng**,
+        nếu không trình duyệt chặn. Nên mọi `pointerdown` đều gọi unlock().
+     2. Điện thoại tầm thấp sặc nếu mở quá nhiều dao động cùng lúc — có trần
+        giọng (MAXV) và có van chặn lặp (throttle) cho tiếng dồn dập.
+     3. Tiếng phải **ngắn**. Mọi hiệu ứng dưới 0,5 giây trừ tiếng kết ván.
+     ========================================================= */
+
+  var AUDIO = (function () {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    var ctx = null, master = null, noiseBuf = null;
+    var on = true, voices = 0, last = {};
+    var MAXV = 14;
+
+    try { on = localStorage.getItem("chupa.mute") !== "1"; } catch (e) {}
+
+    function unlock() {
+      if (!AC) return;
+      if (!ctx) {
+        try { ctx = new AC(); } catch (e) { ctx = null; return; }
+        master = ctx.createGain();
+        master.gain.value = 0.22;
+        master.connect(ctx.destination);
+      }
+      if (ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} }
+    }
+
+    function ready() { return on && ctx && master && ctx.state === "running"; }
+
+    function slot() {
+      if (voices >= MAXV) return false;
+      voices++;
+      return true;
+    }
+    function freeSlot(t) { setTimeout(function () { voices = Math.max(0, voices - 1); }, t * 1000 + 60); }
+
+    // Một giọng: dao động có trượt cao độ, bao biên tăng nhanh giảm dần.
+    function tone(o) {
+      if (!ready() || !slot()) return;
+      var t0 = ctx.currentTime, d = o.d || 0.08;
+      // Trả giọng đặt lịch NGAY, trước khi dựng nút. Nếu đặt ở cuối mà giữa
+      // chừng ném lỗi thì giọng đó kẹt vĩnh viễn, đủ mười bốn lần là câm hết.
+      freeSlot(d);
+      var osc = ctx.createOscillator(), g = ctx.createGain();
+      osc.type = o.type || "square";
+      osc.frequency.setValueAtTime(o.f, t0);
+      if (o.f2 && o.f2 !== o.f) {
+        if (o.glide === "exp") osc.frequency.exponentialRampToValueAtTime(Math.max(1, o.f2), t0 + d);
+        else osc.frequency.linearRampToValueAtTime(Math.max(1, o.f2), t0 + d);
+      }
+      var peak = (o.g === undefined ? 0.5 : o.g);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(peak, t0 + Math.min(0.012, d * 0.25));
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+      osc.connect(g); g.connect(master);
+      osc.start(t0); osc.stop(t0 + d + 0.02);
+    }
+
+    // Tiếng đụng/nổ: nhiễu trắng qua bộ lọc, dùng cho vỡ, đâm, bom.
+    function noise(o) {
+      if (!ready() || !slot()) return;
+      if (!noiseBuf) {
+        var n = Math.floor(ctx.sampleRate * 0.5);
+        noiseBuf = ctx.createBuffer(1, n, ctx.sampleRate);
+        var ch = noiseBuf.getChannelData(0);
+        for (var i = 0; i < n; i++) ch[i] = Math.random() * 2 - 1;
+      }
+      var t0 = ctx.currentTime, d = o.d || 0.16;
+      freeSlot(d);
+      var src = ctx.createBufferSource(); src.buffer = noiseBuf;
+      var flt = ctx.createBiquadFilter();
+      flt.type = o.lp ? "lowpass" : "bandpass";
+      flt.frequency.setValueAtTime(o.f || 900, t0);
+      if (o.f2) flt.frequency.exponentialRampToValueAtTime(Math.max(40, o.f2), t0 + d);
+      flt.Q.value = o.q || 1.2;
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(o.g === undefined ? 0.5 : o.g, t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+      src.connect(flt); flt.connect(g); g.connect(master);
+      src.start(t0); src.stop(t0 + d + 0.02);
+    }
+
+    function seq(notes, type, step, gain) {
+      for (var i = 0; i < notes.length; i++) {
+        (function (n, i) {
+          setTimeout(function () {
+            tone({ f: n, type: type || "square", d: step * 1.6, g: gain === undefined ? 0.42 : gain });
+          }, i * step * 1000);
+        })(notes[i], i);
+      }
+    }
+
+    // Nấc thang âm nhạc: nhân tần số theo nửa cung, dùng cho chuỗi nổ cao dần.
+    function semi(base, n) { return base * Math.pow(2, n / 12); }
+
+    // Van chặn lặp: hai tiếng cùng loại cách nhau dưới ms thì bỏ tiếng sau.
+    function gate(key, ms) {
+      var t = Date.now();
+      if (last[key] && t - last[key] < ms) return false;
+      last[key] = t;
+      return true;
+    }
+
+    var BANK = {
+      /* ---- giao diện ---- */
+      tap:        function () { if (gate("tap", 40)) tone({ f: 620, f2: 880, d: 0.05, type: "square", g: 0.26 }); },
+      confirm:    function () { seq([523, 784], "triangle", 0.08, 0.4); },
+      chime:      function () { seq([784, 1047, 1319], "triangle", 0.07, 0.34); },
+      toggleOn:   function () { seq([523, 880], "square", 0.06, 0.36); },
+
+      /* ---- Ghép Kẹo ---- */
+      pick:       function () { if (gate("pick", 50)) tone({ f: 520, d: 0.04, type: "sine", g: 0.3 }); },
+      swapOk:     function () { tone({ f: 440, f2: 660, d: 0.07, type: "triangle", g: 0.32 }); },
+      swapBad:    function () { tone({ f: 220, f2: 150, d: 0.12, type: "square", g: 0.3 }); },
+      // Chuỗi càng dài tiếng càng cao — đúng yêu cầu "+1 +2 combo nối tiếp".
+      clear:      function (chain) {
+        var n = Math.min(12, chain || 0);
+        tone({ f: semi(523, n * 2), f2: semi(784, n * 2), d: 0.09, type: "square", g: 0.34 });
+        if (n >= 2) setTimeout(function () {
+          tone({ f: semi(1047, n * 2), d: 0.07, type: "triangle", g: 0.26 });
+        }, 60);
+      },
+      makePower:  function () { seq([659, 988, 1319], "triangle", 0.05, 0.3); },
+      line:       function () { tone({ f: 300, f2: 1400, d: 0.18, type: "sawtooth", g: 0.26, glide: "exp" });
+                                noise({ f: 1200, f2: 3000, d: 0.16, g: 0.2 }); },
+      bomb:       function () { noise({ f: 900, f2: 90, d: 0.3, g: 0.45, lp: true });
+                                tone({ f: 160, f2: 50, d: 0.28, type: "sawtooth", g: 0.3, glide: "exp" }); },
+      rainbow:    function () { seq([523, 659, 784, 988, 1319, 1568], "triangle", 0.055, 0.32); },
+      wipe:       function () { seq([392, 523, 659, 784, 1047, 1319, 1568, 2093], "square", 0.05, 0.3);
+                                noise({ f: 600, f2: 4000, d: 0.5, g: 0.18 }); },
+      noMoves:    function () { seq([392, 330, 262], "triangle", 0.14, 0.36); },
+
+      /* ---- Chạy Kẹo ---- */
+      jump:       function () { tone({ f: 300, f2: 720, d: 0.09, type: "square", g: 0.32 }); },
+      lane:       function () { if (gate("lane", 70)) tone({ f: 480, f2: 560, d: 0.04, type: "square", g: 0.2 }); },
+      coin:       function () { if (!gate("coin", 45)) return;
+                                tone({ f: 988, d: 0.05, type: "square", g: 0.3 });
+                                setTimeout(function () { tone({ f: 1319, d: 0.09, type: "square", g: 0.3 }); }, 50); },
+
+      /* ---- Landmark 81 ---- */
+      flap:       function () { if (!gate("flap", 60)) return;
+                                tone({ f: 380, f2: 640, d: 0.07, type: "triangle", g: 0.3 });
+                                noise({ f: 1800, d: 0.06, g: 0.12 }); },
+      pass:       function () { tone({ f: 880, f2: 1175, d: 0.08, type: "sine", g: 0.3 }); },
+
+      /* ---- Đối Kẹo ---- */
+      paddle:     function () { tone({ f: 420, f2: 520, d: 0.05, type: "square", g: 0.32 }); },
+      wall:       function () { if (gate("wall", 40)) tone({ f: 260, d: 0.04, type: "square", g: 0.22 }); },
+      point:      function () { seq([660, 990], "triangle", 0.07, 0.36); },
+
+      /* ---- kết ván ---- */
+      crash:      function () { noise({ f: 1400, f2: 120, d: 0.32, g: 0.5, lp: true });
+                                tone({ f: 300, f2: 60, d: 0.34, type: "sawtooth", g: 0.34, glide: "exp" }); },
+      win:        function () { seq([523, 659, 784, 1047], "triangle", 0.1, 0.4); },
+      lose:       function () { seq([392, 330, 262, 196], "triangle", 0.12, 0.36); },
+      record:     function () { seq([784, 988, 1175, 1568, 1175, 1568], "triangle", 0.09, 0.38); },
+      boardUp:    function () { tone({ f: 220, f2: 520, d: 0.22, type: "sine", g: 0.24 }); },
+
+      /* ---- bấm giờ hành trình ---- */
+      tripStart:  function () { seq([523, 784, 1047], "triangle", 0.09, 0.4); },
+      tripStop:   function () { seq([1047, 784, 523], "triangle", 0.11, 0.4); }
+    };
+
+    function play(name, arg) {
+      if (!on) return;
+      unlock();
+      var f = BANK[name];
+      if (f) { try { f(arg); } catch (e) {} }
+    }
+
+    return {
+      unlock: unlock,
+      play: play,
+      isOn: function () { return on; },
+      toggle: function () {
+        on = !on;
+        try { localStorage.setItem("chupa.mute", on ? "0" : "1"); } catch (e) {}
+        if (on) { unlock(); play("toggleOn"); }
+        return on;
+      }
+    };
+  })();
+
+  function snd(name, arg) { AUDIO.play(name, arg); }
+
+  /* Mọi nút đều kêu. Bắt ở pha bắt giữ (capture) trên `pointerdown` vì:
+     — phải chạy trong cử chỉ của người dùng thì trình duyệt mới cho mở tiếng,
+     — và `pointerdown` phản hồi nhanh hơn `click` rõ rệt trên điện thoại. */
+  var SND_BTN = {
+    obPlay: "confirm",
+    tripStart: "tripStart", tripStop: "tripStop",
+    shareRank: "chime", tripShare: "chime", endShare: "chime",
+    shareDl: "chime", fsDl: "chime"
+  };
+  document.addEventListener("pointerdown", function (e) {
+    AUDIO.unlock();
+    var t = e.target, b = t && t.closest ? t.closest("button") : null;
+    if (!b || b.disabled) return;
+    if (b.id === "sndBtn") return;            // nút này tự lo tiếng của nó
+    snd(SND_BTN[b.id] || "tap");
+  }, true);
+
+  (function () {
+    var btn = document.getElementById("sndBtn"), ico = document.getElementById("sndIcon");
+    function paint() {
+      var on = AUDIO.isOn();
+      btn.classList.toggle("off", !on);
+      ico.textContent = on ? "\u266a" : "\u2715";
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      btn.title = on ? "Tắt tiếng" : "Bật tiếng";
+    }
+    btn.addEventListener("click", function () { AUDIO.toggle(); paint(); });
+    paint();
+  })();
+
 
   function repaintMissionIcons() {
     if (!gridEl) return;
@@ -3281,6 +3543,14 @@
       endNote.textContent = "Tổng điểm của bạn: " + profile.total +
         (record ? "" : " · kỷ lục " + g.unit.toLowerCase() + ": " + prevBest);
     }
+    /* Tiếng kết ván đợi 320ms cho tiếng đâm kịp tắt, không thì hai tiếng chồng
+       lên nhau nghe thành một cục. Kỷ lục mới thì chơi thêm đoạn reo riêng. */
+    setTimeout(function () {
+      if (!scores) snd("lose");
+      else if (record) snd("record");
+      else snd(reachedGoal ? "win" : "lose");
+    }, 320);
+
     if (endTimer) clearTimeout(endTimer);
     endTimer = setTimeout(function () { endTimer = null; showEndBoard(); }, 1000);
   }
@@ -3298,6 +3568,7 @@
   }
 
   function showEndBoard() {
+    snd("boardUp");
     var b = endBoardEl();
     ovEnd.hidden = false;
     ovEnd.classList.add("veiled");
