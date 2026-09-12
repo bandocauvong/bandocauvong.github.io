@@ -583,12 +583,16 @@
   .btn:hover { background: var(--red-lt); }
   .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--red-dk); }
   .btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+  /* Nút phụ phải có nền ĐẶC. Để trong suốt thì nền tia nắng xuyên qua, nút
+     nhìn như ô trống bị lỗi vẽ chứ không ra cái nút. Bài học này đã ghi cho
+     nút bấm giờ ở trên, nay áp cho mọi nút phụ. */
   .btn.ghost {
-    background: transparent; color: var(--ink-soft); box-shadow: none; border: 3px solid var(--ink-soft);
+    background: #FFFFFF; color: var(--ink); box-shadow: 0 3px 0 rgba(43,27,20,.22);
+    border: 3px solid var(--ink);
     font-size: .9rem; padding: 8px 22px;
   }
-  .btn.ghost:hover { background: rgba(43,27,20,.07); color: var(--ink); }
-  .btn.ghost:active { transform: none; }
+  .btn.ghost:hover { background: var(--cream); color: var(--ink); }
+  .btn.ghost:active { transform: translateY(3px); box-shadow: 0 0 0 rgba(43,27,20,.22); }
 
   #endFace { width: 88px; height: 96px; image-rendering: pixelated; display: block; margin: -2px 0 -6px; }
   .bignum {
@@ -790,7 +794,7 @@
 
       <div class="trip-run">
         <button class="btn" id="tripStart" type="button">Bắt đầu</button>
-        <button class="btn ghost" id="tripStop" type="button">Kết thúc</button>
+        <button class="btn" id="tripStop" type="button">Kết thúc</button>
       </div>
 
       <div class="trip-where">
@@ -2452,6 +2456,11 @@
     LANES: [47, 80, 113],
     lane: 1, px: 80, dist: 0, mile: 0, coins: 0, speed: 92, obs: [], spawnD: 0, jump: 0, dead: false, downY: 0, downX: 0,
     pops: [],
+    /* Quãng đường DÙNG ĐỂ VẼ, tách khỏi `dist`. Ăn một viên kẹo cộng thẳng
+       +6 vào `dist`; nếu cảnh vật cuộn theo `dist` thì mỗi viên kẹo làm cả
+       hai vệ đường, vạch kẻ lẫn khung chạy của nhân vật nhảy vọt 17 điểm ảnh
+       — nhìn rất giật. `scroll` chỉ tăng đều theo tốc độ, không ăn thưởng. */
+    scroll: 0,
 
     legend: [
       { icon: function (g) { sLolly(g, 10, 14, P.straw, 0); sBear(g, 26, 18, P.lime); }, text: "Kẹo trên đường · nhặt được +6 mét" },
@@ -2476,7 +2485,7 @@
     reset: function () {
       this.lane = 1; this.px = this.LANES[1]; this.dist = 0; this.mile = 0; this.coins = 0;
       this.speed = 92; this.obs = []; this.spawnD = 40; this.jump = 0; this.dead = false;
-      this.pops = [];
+      this.pops = []; this.scroll = 0;
     },
 
     pointer: function (kind, x, y) {
@@ -2505,6 +2514,7 @@
       if (this.dead) return;
       this.speed = 92 + this.dist * 0.09;
       this.dist += this.speed * dt * 0.35;
+      this.scroll += this.speed * dt * 0.35;     // tăng đều, không nhận thưởng kẹo
       if (this.dist - this.mile >= 100) {
         this.mile += 100;
         snd("milestone");
@@ -2553,7 +2563,7 @@
 
     draw: function (c) {
       rect(c, 0, 0, BW, BH, P.grass);
-      var off = this.dist * 2.9;
+      var off = this.scroll * 2.9;              // vẽ theo `scroll`, không theo `dist`
       var sideOff = off % SIDE_H;
       for (var y = -SIDE_H + sideOff; y < BH; y += SIDE_H) {
         c.drawImage(tileSide, 0, y);
@@ -2592,7 +2602,7 @@
       var frame;
       if (this.dead) frame = H_CRASH;
       else if (this.jump > 0) frame = H_JUMP;
-      else frame = H_RUN + (Math.floor(this.dist * 0.25) % 4);   // ~8 bước mỗi giây
+      else frame = H_RUN + (Math.floor(this.scroll * 0.25) % 4);   // ~8 bước mỗi giây
       if (!drawHero(c, frame, this.px, py - lift + 12)) sBear(c, this.px, py - lift, P.red);
 
       // Vẽ viền tối trước rồi chữ vàng lên trên, để số đọc được trên mọi nền đường.
