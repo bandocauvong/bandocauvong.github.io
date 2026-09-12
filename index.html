@@ -1574,6 +1574,26 @@
     return true;
   }
 
+  /* Cắt phần đầu-vai của linh vật, tỉ lệ 1:1 nên không có điểm ảnh nào bị méo.
+     Toạ độ ĐO TỪ CHÍNH ATLAS chứ không ước lượng: quét độ trong suốt thấy đỉnh
+     đầu nằm ở hàng 5, phần thân trên trải từ cột 4 tới cột 39 — rộng đúng 36,
+     bằng đúng bề ngang thanh kẹo trong Đối Kẹo. */
+  var BUST = { x: 4, y: 5, w: 36, h: 18 };
+  function heroBust(c, idx, cx, ty, flip) {
+    if (!HERO_OK) return false;
+    var x = Math.round(cx - BUST.w / 2), y = Math.round(ty);
+    if (flip) {
+      c.save();
+      c.translate(x + BUST.w, y);
+      c.scale(-1, 1);
+      c.drawImage(HERO, idx * HERO_W + BUST.x, BUST.y, BUST.w, BUST.h, 0, 0, BUST.w, BUST.h);
+      c.restore();
+    } else {
+      c.drawImage(HERO, idx * HERO_W + BUST.x, BUST.y, BUST.w, BUST.h, x, y, BUST.w, BUST.h);
+    }
+    return true;
+  }
+
   // cx = horizontal centre, by = the line the feet stand on.
   // Mirroring only negates the x axis, so whole pixels stay whole — nothing
   // is resampled and the art keeps its hard edges.
@@ -2765,6 +2785,70 @@
     }
   };
 
+  /* Sân Đối Kẹo. Dựng sẵn một lần ra canvas ngoài màn hình rồi blit mỗi khung
+     hình, giống các nền khác — vẽ lại từng ô cờ mỗi khung thì phí trên máy yếu.
+
+     Hai điều chỉnh so với bản cũ, theo đúng chỗ khách chê:
+     1. Sân cũ tối om (nâu tím), nay sàn sáng màu kẹo, ngoài sân là thành phố kẹo.
+     2. **Lưới giữa sân kẻ NGANG.** Bản cũ kẻ dọc, mà hai thanh kẹo lại nằm
+        trên–dưới và bóng đi theo chiều dọc — đường kẻ dọc chia sân sai trục,
+        nhìn không hiểu ai giữ phần nào. */
+  var PWALL = 10;
+  var bgPong = (function () {
+    var o = offscreen(BW, BH), g = o.g;
+    var inx = PWALL, inw = BW - PWALL * 2;
+
+    // ---- ngoài sân: thành phố kẹo ----
+    rect(g, 0, 0, BW, BH, "#7CD6FC");
+    for (var side = 0; side < 2; side++) {
+      var sx = side ? BW - PWALL : 0;
+      rect(g, sx, 0, PWALL, BH, "#FFD9EC");
+      /* Sọc kẹo gậy chéo: đọc ra là kẹo ngay, mà chỉ một hoạ tiết nên không
+         rối như dãy nhà vẽ thử lúc đầu. */
+      for (var d = -PWALL; d < BH; d += 8) {
+        for (var k = 0; k < PWALL; k++) {
+          rect(g, sx + k, d + k, 1, 4, "#FF5FA8");
+        }
+      }
+      // cột kẹo mút thưa, KHÔNG vẽ swirl trắng — ở bán kính 4 thì swirl nuốt
+      // hết màu, quả kẹo nhìn thành đốm trắng bạc.
+      for (var ly = 20; ly < BH; ly += 52) {
+        var col = [P.straw, P.lemon, P.aqua, P.lime][((ly / 52) | 0) % 4];
+        rect(g, sx + PWALL / 2 - 1, ly, 2, 11, "#FFF4E8");
+        rect(g, sx + PWALL / 2 - 1, ly, 2, 11, "#FFF4E8");
+        disc(g, sx + PWALL / 2, ly, 4, col);
+        discOutline(g, sx + PWALL / 2, ly, 4, P.ink);
+        rect(g, sx + PWALL / 2 - 2, ly - 2, 2, 2, "rgba(255,255,255,.65)");   // chấm bắt sáng
+      }
+    }
+
+    // ---- sàn sân: ô cờ kẹo, sáng để bóng và thanh kẹo nổi lên ----
+    rect(g, inx, 0, inw, BH, "#FFF6FB");
+    for (var cy = 0; cy < BH; cy += 20) {
+      for (var cx2 = inx; cx2 < inx + inw; cx2 += 20) {
+        if (((cx2 / 20) | 0) % 2 === ((cy / 20) | 0) % 2) rect(g, cx2, cy, 20, 20, "#FFE8F4");
+      }
+    }
+    // vùng sau mỗi thanh kẹo tô khác một chút, cho biết đó là khung thành
+    rect(g, inx, 0, inw, 14, "rgba(255,209,0,.16)");
+    rect(g, inx, BH - 14, inw, 14, "rgba(255,209,0,.16)");
+
+    // viền sân
+    rect(g, inx, 0, 2, BH, P.ink);
+    rect(g, inx + inw - 2, 0, 2, BH, P.ink);
+
+    // vòng tròn giữa sân
+    // Chỉ một vòng tròn. Chấm nhỏ chính giữa vẽ thử lúc đầu nhìn dễ nhầm là
+    // quả bóng thứ hai, đã bỏ.
+    discOutline(g, BW / 2, BH / 2, 26, "rgba(228,0,43,.2)");
+
+    // ---- LƯỚI KẺ NGANG, không phải kẻ dọc ----
+    for (var nx = inx + 3; nx < inx + inw - 3; nx += 13) {
+      rect(g, nx, BH / 2 - 1, 8, 3, "rgba(43,27,20,.3)");
+    }
+    return o.cv;
+  })();
+
   /* =========================================================
      Game 4 — Đối Kẹo (Pong). The only two-player mode, so it is
      also the only game that has to track several fingers at once.
@@ -2784,7 +2868,7 @@
       { id: "duo", label: "2 người", note: "Hai người chung máy · không tính điểm" }
     ],
 
-    WALL: 6, PW: 36, PH: 8, P1Y: 258, P2Y: 18, R: 4,
+    WALL: PWALL, PW: 36, PH: 8, P1Y: 258, P2Y: 18, R: 4,
     p1: 80, p2: 80, ball: null, s1: 0, s2: 0,
     touch: null, serveT: 0, over: false, t: 0, sparks: null,
     botSpeed: 108, botErr: 15,
@@ -2937,33 +3021,41 @@
     },
 
     draw: function (c) {
-      rect(c, 0, 0, BW, BH, "#2A0F26");
-      rect(c, 0, 0, this.WALL, BH, "#431A3C");
-      rect(c, BW - this.WALL, 0, this.WALL, BH, "#431A3C");
-      for (var y = 4; y < BH; y += 12) rect(c, BW / 2 - 1, y, 2, 6, "rgba(255,248,231,.3)");
+      c.drawImage(bgPong, 0, 0);
 
-      // Oversized scores sit behind the play field, like the original.
-      pxText(c, String(this.s2), BW / 2 - 30, BH / 2 - 46, "rgba(255,248,231,.15)", 4);
-      pxText(c, String(this.s1), BW / 2 + 30, BH / 2 + 22, "rgba(255,248,231,.15)", 4);
+      // Điểm số mờ nằm sau sân. Sàn nay sáng nên đổi sang mực tối, chữ kem cũ
+      // đặt trên nền sáng thì mất hút.
+      pxText(c, String(this.s2), BW / 2 - 30, BH / 2 - 48, "rgba(43,27,20,.13)", 4);
+      pxText(c, String(this.s1), BW / 2 + 30, BH / 2 + 24, "rgba(43,27,20,.13)", 4);
+
+      /* Linh vật vẽ TRƯỚC thanh kẹo, để chỗ chồng nhau thì thanh kẹo nằm trên
+         — nhìn ra là đang cầm thanh kẹo chứ không phải đứng cạnh.
+         Chỉ cắt đầu-vai 36x18 nên không che mất thanh kẹo, đúng ý khách. */
+      heroBust(c, H_CHEER, this.p2, this.P2Y - 17);       // đối thủ quay mặt về phía ta
+      // +7 chứ không hơn: khung cao 284, thanh kẹo ở 258, cắt 18 điểm ảnh nữa
+      // là vừa chạm đáy. Đặt thấp hơn là linh vật bị cắt mất chỉ còn hai tai.
+      heroBust(c, H_RUN + 1, this.p1, this.P1Y + 7);      // ta quay lưng, khung chạy là dáng lưng
 
       this.belt(c, this.p2, this.P2Y);
       this.belt(c, this.p1, this.P1Y);
 
       for (var i = 0; i < this.sparks.length; i++) {
         var sp = this.sparks[i];
-        rect(c, sp.x, sp.y, 2, 2, P.cream);
+        rect(c, sp.x, sp.y, 2, 2, P.sun);
+        rect(c, sp.x, sp.y, 1, 1, P.white);
       }
 
       var b = this.ball;
       if (b) {
+        disc(c, b.x, b.y + 1, this.R, "rgba(43,27,20,.16)");   // bóng đổ cho bóng nổi khỏi sàn
         disc(c, b.x, b.y, this.R, P.lemon);
         discOutline(c, b.x, b.y, this.R, P.ink);
         rect(c, b.x - 2, b.y - 2, 1, 1, P.cream);
       }
 
       if (this.mode === "duo") {
-        pxText(c, "2", 14, this.P2Y + 14, "rgba(255,248,231,.35)", 1);
-        pxText(c, "1", 14, this.P1Y - 20, "rgba(255,248,231,.35)", 1);
+        pxText(c, "2", 17, this.P2Y + 16, "rgba(43,27,20,.4)", 1);
+        pxText(c, "1", 17, this.P1Y - 22, "rgba(43,27,20,.4)", 1);
       }
     }
   };
