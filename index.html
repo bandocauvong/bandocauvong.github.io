@@ -52,6 +52,14 @@
      height instead, and anything that still will not fit is scaled by script. */
   html, body { height: 100%; overflow: hidden; }
 
+  /* iOS Safari phong to trang khi cham hai lan lien tiep. Day la bay:
+     `touch-action` KHONG phai thuoc tinh ke thua, nen khai o `body` chi chan
+     duoc cu cham roi dung vao body — cham vao nut, the nhiem vu hay bang ket
+     qua thi van phong to nhu thuong. Phai khai cho MOI phan tu.
+     `#gameCanvas` van giu `touch-action: none` vi selector ID thang `*`, va
+     man choi can toan quyen voi cu cham de nhan vuot. */
+  * { touch-action: manipulation; }
+
   body {
     margin: 0;
     overscroll-behavior: none;
@@ -3747,6 +3755,15 @@
   })();
 
   function snd(name, arg) { AUDIO.play(name, arg); }
+
+  /* Duong phong to thu hai cua iOS: cu chi chum hai ngon. Trang nay khoa vao
+     dung mot man hinh va khong cuon duoc, nen khi da phong to thi nguoi choi
+     KHONG co cach nao dua ve nhu cu ngoai tai lai trang — mot cai bay cut duong
+     voi nguoi la quet ma QR ngoai duong. Chan luon.
+     `gesturestart` la su kien rieng cua Safari, trinh duyet khac bo qua. */
+  ["gesturestart", "gesturechange", "gestureend"].forEach(function (n) {
+    document.addEventListener(n, function (e) { e.preventDefault(); }, { passive: false });
+  });
 
   /* Mọi nút đều kêu. Bắt ở pha bắt giữ (capture) trên `pointerdown` vì:
      — phải chạy trong cử chỉ của người dùng thì trình duyệt mới cho mở tiếng,
