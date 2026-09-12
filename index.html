@@ -1578,18 +1578,23 @@
      Toạ độ ĐO TỪ CHÍNH ATLAS chứ không ước lượng: quét độ trong suốt thấy đỉnh
      đầu nằm ở hàng 5, phần thân trên trải từ cột 4 tới cột 39 — rộng đúng 36,
      bằng đúng bề ngang thanh kẹo trong Đối Kẹo. */
-  var BUST = { x: 4, y: 5, w: 36, h: 18 };
+  var BUST = { x: 4, w: 36, h: 18 };
+  /* Đỉnh đầu mỗi khung một khác — khung ngồi và khung cúi mặt thấp hơn hẳn.
+     Đo bằng cách quét độ trong suốt từng khung, không ước lượng. Cắt từ sai
+     hàng là mất mặt hoặc dính một mảng trống. */
+  var BUST_TOP = [14, 6, 5, 6, 6, 5, 9, 5, 8];
   function heroBust(c, idx, cx, ty, flip) {
     if (!HERO_OK) return false;
+    var sy = BUST_TOP[idx] === undefined ? 5 : BUST_TOP[idx];
     var x = Math.round(cx - BUST.w / 2), y = Math.round(ty);
     if (flip) {
       c.save();
       c.translate(x + BUST.w, y);
       c.scale(-1, 1);
-      c.drawImage(HERO, idx * HERO_W + BUST.x, BUST.y, BUST.w, BUST.h, 0, 0, BUST.w, BUST.h);
+      c.drawImage(HERO, idx * HERO_W + BUST.x, sy, BUST.w, BUST.h, 0, 0, BUST.w, BUST.h);
       c.restore();
     } else {
-      c.drawImage(HERO, idx * HERO_W + BUST.x, BUST.y, BUST.w, BUST.h, x, y, BUST.w, BUST.h);
+      c.drawImage(HERO, idx * HERO_W + BUST.x, sy, BUST.w, BUST.h, x, y, BUST.w, BUST.h);
     }
     return true;
   }
@@ -1656,30 +1661,48 @@
   })();
 
   // Candy-land sky: banded blue, a rainbow arc, chunky clouds.
+  /* Sân Ghép Kẹo là một QUẦY KẸO, không còn là khoảng trời trống như trước.
+     Dựng sẵn một lần rồi blit; chỉ ô cờ và viên kẹo mới vẽ động, vì còn ô đang
+     chọn, đang rơi, đang nổ.
+     Dải kẹo gậy hai mép cố ý dùng CÙNG hoạ tiết với sân Đối Kẹo, để bốn trò
+     nhìn ra là cùng một thế giới chứ không phải bốn bản rời. */
   var bgSky = (function () {
     var o = offscreen(BW, BH), g = o.g;
-    var bands = [hexToRgb("#8FDCFF"), hexToRgb("#6FD2FA"), hexToRgb("#56C8F5"), hexToRgb("#3FB6E9")];
-    var arc = [hexToRgb("#FF2D55"), hexToRgb("#FF8A1E"), hexToRgb("#FFD60A"), hexToRgb("#3ECF4C"), hexToRgb("#2FB8E8"), hexToRgb("#A65BE0")];
-    var img = g.createImageData(BW, BH), d = img.data;
-    var ax = BW * 0.5, ay = BH * 0.94;
-    for (var y = 0; y < BH; y++) for (var x = 0; x < BW; x++) {
-      var col = bands[Math.min(bands.length - 1, Math.floor(y / BH * bands.length))];
-      var dx = x - ax, dy = y - ay;
-      if (dy < 0) {
-        var band = Math.floor((Math.sqrt(dx * dx + dy * dy) - 96) / 4);
-        if (band >= 0 && band < 6) col = arc[band];
+    var BX = 10, BY = 75, CE = 20, COLS = 7, ROWS = 9;
+    var bw = COLS * CE, bh = ROWS * CE;
+
+    // tường tiệm: giấy dán sọc dọc nhạt
+    rect(g, 0, 0, BW, BH, "#FFF3E4");
+    for (var x = 0; x < BW; x += 8) rect(g, x, 0, 4, BH, "#FFEAD6");
+
+    // dải kẹo gậy hai mép
+    for (var side = 0; side < 2; side++) {
+      var sx = side ? BW - 10 : 0;
+      rect(g, sx, 0, 10, BH, "#FFD9EC");
+      for (var d = -10; d < BH; d += 8) {
+        for (var k = 0; k < 10; k++) rect(g, sx + k, d + k, 1, 4, "#FF5FA8");
       }
-      var i = (y * BW + x) * 4;
-      d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = 255;
     }
-    g.putImageData(img, 0, 0);
-    var puffs = [[18, 30], [104, 18], [64, 62], [130, 74], [30, 96]];
-    for (var p = 0; p < puffs.length; p++) {
-      var px = puffs[p][0], py = puffs[p][1];
-      rect(g, px, py, 22, 6, P.white);
-      rect(g, px + 5, py - 4, 12, 5, P.white);
-      rect(g, px + 3, py + 6, 16, 2, "rgba(220,240,255,.9)");
-    }
+
+    // kệ trưng bày phía trên
+    rect(g, 0, 0, BW, 44, P.red);
+    rect(g, 0, 38, BW, 6, "#A80020");            // mặt dưới kệ, cho ra khối
+    rect(g, 0, 44, BW, 4, P.ink);
+    for (var f = 12; f < BW; f += 34) rect(g, f, 44, 6, 6, "#7A1020");   // chân kệ
+
+    // mặt quầy phía dưới
+    var cy = BY + bh + 8;
+    rect(g, 0, cy, BW, BH - cy, "#F49CC4");
+    rect(g, 0, cy, BW, 3, "#FFD3E9");
+    rect(g, 0, cy + 3, BW, 1, "#C97BA3");
+    for (var q = 4; q < BW; q += 14) rect(g, q, cy + 8, 7, 2, "rgba(255,255,255,.4)");
+
+    // khay đựng kẹo bọc quanh bàn cờ
+    rect(g, BX - 7, BY - 7, bw + 14, bh + 14, "#E4517F");
+    rect(g, BX - 7, BY - 7, bw + 14, 3, "#FF8FC6");        // cạnh bắt sáng
+    rect(g, BX - 7, BY + bh + 4, bw + 14, 3, "#C63A66");   // cạnh khuất
+    rect(g, BX - 4, BY - 4, bw + 8, bh + 8, P.ink);
+
     return o.cv;
   })();
 
@@ -2400,14 +2423,16 @@
     },
 
     draw: function (c) {
-      c.drawImage(bgSky, 0, 0);
+      c.drawImage(bgSky, 0, 0);          // kệ, quầy và khay đã nằm sẵn trong nền
 
-      rect(c, 0, 0, BW, 44, P.red);
-      rect(c, 0, 44, BW, 4, P.ink);
       for (var s = 0; s < 6; s++) drawTileBig(c, s, 16 + s * 26, 21, 2);
 
       var BX = this.OX, BY = this.OY, CE = this.CELL;
-      rect(c, BX - 4, BY - 4, this.COLS * CE + 8, this.ROWS * CE + 8, P.ink);
+
+      /* Linh vật nhô lên sau khay kẹo, vẽ trước khi kẹp vùng bàn cờ.
+         +7 chứ không hơn: khung cao 284, khay hết ở 262, bust cao 18 — đặt
+         thấp hơn là bị cắt mất chân ảnh. */
+      heroBust(c, H_CHEER, BW / 2, BY + this.ROWS * CE + 7);
 
       c.save();
       c.beginPath();
@@ -2417,8 +2442,10 @@
       var r, col2;
       for (r = 0; r < this.ROWS; r++) for (col2 = 0; col2 < this.COLS; col2++) {
         var lit = this.sel && this.sel.r === r && this.sel.c === col2;
+        // Ô cờ dịu hẳn so với bản cũ (hồng đậm), để viên kẹo là thứ nổi nhất
+        // trên bàn chứ không phải cái nền.
         rect(c, BX + col2 * CE, BY + r * CE, CE, CE,
-             lit ? P.cream : ((r + col2) % 2 ? P.pinkPale : P.pinkLt));
+             lit ? P.cream : ((r + col2) % 2 ? "#FFF6FB" : "#FFE4F2"));
       }
 
       for (r = 0; r < this.ROWS; r++) for (col2 = 0; col2 < this.COLS; col2++) {
@@ -3031,10 +3058,15 @@
       /* Linh vật vẽ TRƯỚC thanh kẹo, để chỗ chồng nhau thì thanh kẹo nằm trên
          — nhìn ra là đang cầm thanh kẹo chứ không phải đứng cạnh.
          Chỉ cắt đầu-vai 36x18 nên không che mất thanh kẹo, đúng ý khách. */
-      heroBust(c, H_CHEER, this.p2, this.P2Y - 17);       // đối thủ quay mặt về phía ta
+      /* Hết trận thì bên thắng ăn mừng, bên thua ngồi chóng mặt. Khung 7 là
+         giơ tay reo, khung 6 là ngồi bệt mắt xoáy có vòng chóng mặt trên đầu
+         — cả hai đã có sẵn trong atlas, không phải vẽ thêm. */
+      var faceTop = this.over ? (this.s2 >= this.goal ? H_CHEER : H_CRASH) : H_CHEER;
+      var faceBot = this.over ? (this.s1 >= this.goal ? H_CHEER : H_CRASH) : (H_RUN + 1);
+      heroBust(c, faceTop, this.p2, this.P2Y - 17);       // đối thủ quay mặt về phía ta
       // +7 chứ không hơn: khung cao 284, thanh kẹo ở 258, cắt 18 điểm ảnh nữa
       // là vừa chạm đáy. Đặt thấp hơn là linh vật bị cắt mất chỉ còn hai tai.
-      heroBust(c, H_RUN + 1, this.p1, this.P1Y + 7);      // ta quay lưng, khung chạy là dáng lưng
+      heroBust(c, faceBot, this.p1, this.P1Y + 7);        // ta quay lưng, khung chạy là dáng lưng
 
       this.belt(c, this.p2, this.P2Y);
       this.belt(c, this.p1, this.P1Y);
