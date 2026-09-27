@@ -273,6 +273,149 @@
   }
   .ob-card input:focus { outline: none; border-color: var(--red); }
   .ob-err { margin: 0; min-height: 1em; font-size: .74rem; font-weight: 600; color: var(--red); }
+
+  /* ---------- Đăng nhập số điện thoại + OTP ----------
+     Dùng lại vỏ `.onboard` / `.ob-card` để ba màn đầu vào trông như một bộ. */
+  .ob-step {
+    align-self: stretch; display: flex; align-items: center; justify-content: center; gap: 6px;
+    margin-bottom: 2px;
+  }
+  .ob-step i {
+    width: 22px; height: 6px; background: rgba(43,27,20,.18); border: 2px solid var(--ink);
+  }
+  .ob-step i.on { background: var(--red); }
+  .ob-step i.done { background: var(--jade); }
+
+  /* Ô nhập số điện thoại có mã vùng dính liền bên trái. */
+  .phonewrap { align-self: stretch; display: flex; border: 3px solid var(--ink); background: #FFF; }
+  .phonewrap b {
+    flex: none; display: grid; place-items: center; padding: 0 10px;
+    background: var(--sun); border-right: 3px solid var(--ink);
+    font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: var(--ink);
+  }
+  .phonewrap input {
+    flex: 1; min-width: 0; border: none !important; background: transparent;
+    font-family: var(--font-display); font-weight: 700; font-size: 1.25rem;
+    letter-spacing: .06em; color: var(--ink); padding: 9px 11px;
+  }
+  .phonewrap input:focus { outline: none; }
+  .phonewrap.bad { border-color: var(--red); }
+
+  /* Sáu ô mã OTP. Một trường nhập thật nằm trên, ẩn đi; sáu ô chỉ là hình
+     — làm sáu trường thật thì bàn phím điện thoại nhảy lứng tứng giữa các ô. */
+  .otpwrap { align-self: stretch; position: relative; }
+  .otpwrap input {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; border: none; background: none; font-size: 16px;
+    letter-spacing: 1em; text-align: center; color: transparent; caret-color: transparent;
+  }
+  .otpcells { display: flex; gap: 6px; pointer-events: none; }
+  .otpcells span {
+    flex: 1; min-width: 0; height: 52px; display: grid; place-items: center;
+    background: #FFF; border: 3px solid var(--ink);
+    font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; color: var(--ink);
+  }
+  .otpcells span.on { border-color: var(--red); background: #FFF7F8; }
+  .otpwrap.bad .otpcells span { border-color: var(--red); }
+
+  /* Khối hiện mã thử. Phải trông như một thứ tạm bợ, KHÔNG được giống
+     thành phần thật của sản phẩm — để khách xem slide không tưởng là bản chạy thật. */
+  .otpdemo {
+    align-self: stretch; display: flex; align-items: center; gap: 9px;
+    background: repeating-linear-gradient(45deg, #FFF3C4 0 8px, #FFE9A0 8px 16px);
+    border: 3px dashed var(--ink); padding: 8px 10px; text-align: left;
+  }
+  .otpdemo em {
+    font-style: normal; font-family: var(--font-display); font-weight: 800;
+    font-size: 1.6rem; letter-spacing: .14em; color: var(--ink); line-height: 1;
+  }
+  .otpdemo span { font-size: .64rem; line-height: 1.35; color: var(--ink-soft); font-weight: 600; }
+  .ob-card .linkish {
+    margin: 0; background: none; border: none; padding: 2px; cursor: pointer;
+    font-family: var(--font-body); font-size: .74rem; font-weight: 600;
+    color: var(--ink-soft); text-decoration: underline;
+  }
+  .ob-card .linkish:hover { color: var(--red); }
+  .ob-note { margin: 0; font-size: .68rem; line-height: 1.45; color: var(--ink-soft); max-width: 30ch; }
+
+  /* ---------- Thẻ thông báo kiểu Zalo ----------
+     Đây là **thẻ mô phỏng trong trang**, không phải tin Zalo thật. Cố ý dụng
+     phẳng theo lối Zalo (nền trắng, góc tròn, đổ bóng mềm) chứ không theo
+     lối pixel của game — để người xem slide nhận ra ngay đây là thông báo
+     đến từ bên ngoài, không phải một màn của game. */
+  .ztoast {
+    position: fixed; z-index: 55;
+    left: 10px; right: 10px; top: calc(10px + env(safe-area-inset-top));
+    max-width: 440px; margin: 0 auto;
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 11px 12px;
+    background: #FFFFFF; border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(20,30,60,.28), 0 2px 6px rgba(20,30,60,.16);
+    text-align: left; cursor: pointer;
+    transform: translateY(-160%);
+    transition: transform .42s cubic-bezier(.2,.9,.25,1);
+  }
+  .ztoast.in { transform: translateY(0); }
+  .ztoast[hidden] { display: none; }
+  .zava {
+    flex: none; width: 40px; height: 40px; border-radius: 50%;
+    background: #0068FF; display: grid; place-items: center;
+    color: #FFF; font-family: var(--font-display); font-weight: 800; font-size: 1.05rem;
+  }
+  .ztxt { flex: 1; min-width: 0; }
+  .ztop { display: flex; align-items: baseline; gap: 6px; }
+  .ztop b { font-size: .84rem; font-weight: 700; color: #0B1B33; }
+  .ztop i {
+    font-style: normal; font-size: .58rem; font-weight: 700; color: #FFF;
+    background: #0068FF; border-radius: 4px; padding: 1px 4px; flex: none;
+  }
+  .ztop u { margin-left: auto; text-decoration: none; font-size: .64rem; color: #8A93A3; flex: none; }
+  .zbody { margin: 3px 0 0; font-size: .78rem; line-height: 1.4; color: #3A4557; }
+  .zcta {
+    margin-top: 8px; display: inline-block;
+    font-size: .76rem; font-weight: 700; color: #0068FF;
+  }
+  .zdemo { font-size: .56rem; color: #A6AEBC; margin: 5px 0 0; }
+
+  /* ---------- Nhiệm vụ chụp ảnh ---------- */
+  .photo-card { width: min(380px, 100%); }
+  .shotbox {
+    align-self: stretch; position: relative; aspect-ratio: 4 / 3;
+    background: rgba(43,27,20,.08); border: 3px dashed var(--ink);
+    display: grid; place-items: center; overflow: hidden;
+  }
+  .shotbox.has { border-style: solid; background: #000; }
+  .shotbox img { width: 100%; height: 100%; object-fit: cover; display: none; }
+  .shotbox.has img { display: block; }
+  .shothint { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px; }
+  .shotbox.has .shothint { display: none; }
+  .shothint svg { width: 40px; height: 40px; color: var(--ink-soft); }
+  .shothint span { font-size: .74rem; color: var(--ink-soft); font-weight: 600; }
+  .shotbox input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .mult-hero {
+    align-self: stretch; display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--sun); border: 4px solid var(--ink); padding: 10px;
+    box-shadow: 0 5px 0 var(--sun-dk);
+  }
+  .mult-hero b {
+    font-family: var(--font-display); font-weight: 800; font-size: 2.1rem;
+    line-height: 1; color: var(--red);
+  }
+  .mult-hero span { font-size: .72rem; line-height: 1.35; font-weight: 700; color: var(--ink); text-align: left; }
+
+  /* ---------- Nhãn hệ số nhân ----------
+     Phải thấy được ở **cả màn hình chính lẫn màn chơi**, không thì người chơi
+     không biết mình đang được nhân điểm. */
+  .multtag {
+    flex: none; display: inline-flex; align-items: center; gap: 4px;
+    background: var(--red); color: var(--cream);
+    border: 2px solid var(--ink); padding: 2px 7px;
+    font-family: var(--font-display); font-weight: 800; font-size: .82rem; line-height: 1.3;
+    box-shadow: 0 2px 0 var(--red-dk);
+  }
+  .multtag[hidden] { display: none; }
+  .multtag em { font-style: normal; font-size: .56rem; font-weight: 700; letter-spacing: .06em; }
+  .banner .multtag { position: absolute; right: 10px; top: 10px; z-index: 2; }
   .ios-hint {
     margin: 0; font-size: .7rem; line-height: 1.45; color: var(--ink-soft);
     background: rgba(43,27,20,.07); padding: 7px 9px; display: none;
@@ -509,6 +652,9 @@
   .playbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
   .playbar > :first-child { justify-self: start; }
   .playbar > :last-child { justify-self: end; }
+  /* Nhãn hệ số phải nằm CÙNG ô lưới với ô điểm. Đừng thêm con thứ tư vào
+     `.playbar` — lưới chỉ có ba cột nên con thứ tư rơi xuống hàng dưới. */
+  .pstat { display: flex; align-items: center; gap: 7px; }
   .back {
     background: none; border: none; color: var(--ink); cursor: pointer;
     font-size: .74rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 6px 2px;
@@ -658,6 +804,19 @@
     .legend span { font-size: .72rem; }
     .board { gap: 7px; padding: 11px 12px 13px; }
   }
+  /* Máy màn ngắn (360×540 trở xuống): bóp ba màn đầu vào lại. Đo được thẻ
+     chụp ảnh cao 522px, ở vh 540 chỉ còn hở 9px mỗi bên — thấp hơn nữa là cắt. */
+  @media (max-height: 560px) {
+    .ob-card { padding: 15px 16px 17px; gap: 8px; }
+    .ob-card h1 { font-size: 1.55rem; }
+    .ob-card canvas { width: 48px; height: 48px; }
+    .photo-card .shotbox { aspect-ratio: 16 / 10; }
+    .photo-card .mult-hero b { font-size: 1.6rem; }
+    .photo-card .mult-hero { padding: 7px; }
+    .otpcells span { height: 44px; font-size: 1.25rem; }
+    .otpdemo em { font-size: 1.3rem; }
+  }
+
   @media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; } }
 </style>
 </head>
@@ -722,11 +881,97 @@
   </div>
 </section>
 
+<div class="ztoast" id="zToast" role="button" tabindex="0" hidden>
+  <span class="zava">CC</span>
+  <div class="ztxt">
+    <div class="ztop">
+      <b>Chupa Chups</b><i>OA</i><u>vừa xong</u>
+    </div>
+    <p class="zbody">Để nhân đôi điểm mọi ván từ giờ: chụp một tấm ảnh có kẹo Chupa Chups
+    trên đường về quê, gửi lên là xong.</p>
+    <span class="zcta">Mở nhiệm vụ chụp ảnh ›</span>
+    <p class="zdemo">Bản thử — thẻ mô phỏng trong trang, chưa nối Zalo OA thật.</p>
+  </div>
+</div>
+
+<section class="onboard" id="photoPanel" hidden>
+  <div class="ob-card photo-card">
+    <button class="pxbtn share-back" id="phBack" type="button" title="Quay lại" aria-label="Quay lại"><svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><g fill="currentColor"><rect x="0" y="4" width="1" height="1"/><rect x="1" y="3" width="1" height="3"/><rect x="2" y="2" width="1" height="5"/><rect x="3" y="4" width="6" height="1"/></g></svg></button>
+    <p class="qr-title">Nhiệm vụ chụp ảnh</p>
+
+    <div class="mult-hero">
+      <b>x2</b>
+      <span>Gửi ảnh xong là <strong>mọi ván chơi sau đó</strong><br>được nhân đôi điểm</span>
+    </div>
+
+    <div class="shotbox" id="phBox">
+      <img id="phImg" alt="Ảnh bạn vừa chụp">
+      <div class="shothint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.7l1.1-2h5.4l1.1 2h1.7A2.5 2.5 0 0 1 19 8.5v8A2.5 2.5 0 0 1 16.5 19h-11A2.5 2.5 0 0 1 3 16.5z"/>
+          <circle cx="11" cy="12.5" r="3.4"/>
+        </svg>
+        <span>Bấm để chụp hoặc chọn ảnh</span>
+      </div>
+      <input id="phFile" type="file" accept="image/*" capture="environment"
+             aria-label="Chụp hoặc chọn ảnh">
+    </div>
+
+    <p class="ob-err" id="phErr"></p>
+    <button class="btn" id="phSend" type="button">Gửi ảnh</button>
+    <p class="ob-note">Ảnh chỉ lưu trên máy bạn ở bản thử này, chưa gửi đi đâu.</p>
+  </div>
+</section>
+
+<section class="onboard" id="authPhone" hidden>
+  <div class="ob-card">
+    <div class="ob-step"><i class="on"></i><i></i><i></i></div>
+    <canvas id="apMark" width="64" height="64"></canvas>
+    <h1>Bản đồ<em>cầu vồng</em></h1>
+    <p class="lede">Nhập số điện thoại để lưu điểm và nhận thưởng cuối chiến dịch.</p>
+    <label for="apPhone">Số điện thoại của bạn</label>
+    <div class="phonewrap" id="apWrap">
+      <b>+84</b>
+      <input id="apPhone" type="tel" inputmode="numeric" maxlength="11"
+             placeholder="912 345 678" autocomplete="tel">
+    </div>
+    <p class="ob-err" id="apErr"></p>
+    <button class="btn" id="apSend" type="button">Gửi mã xác thực</button>
+    <p class="ob-note">Số của bạn chỉ dùng để định danh tài khoản trong chiến dịch này.</p>
+  </div>
+</section>
+
+<section class="onboard" id="authOtp" hidden>
+  <div class="ob-card">
+    <div class="ob-step"><i class="done"></i><i class="on"></i><i></i></div>
+    <p class="kicker">Xác thực</p>
+    <h2 class="qr-title">Nhập mã sáu số</h2>
+    <p class="lede">Mã vừa gửi tới <strong id="aoPhone">—</strong></p>
+    <div class="otpdemo">
+      <em id="aoCode">------</em>
+      <span><strong>Bản thử:</strong> mã hiện sẵn ở đây vì chưa nối tổng đài SMS.
+      Bản chạy thật sẽ gửi về tin nhận.</span>
+    </div>
+    <div class="otpwrap" id="aoWrap">
+      <div class="otpcells" id="aoCells">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <input id="aoInput" type="tel" inputmode="numeric" maxlength="6"
+             autocomplete="one-time-code" aria-label="Mã xác thực sáu số">
+    </div>
+    <p class="ob-err" id="aoErr"></p>
+    <button class="btn" id="aoOk" type="button">Xác thực</button>
+    <button class="linkish" id="aoBack" type="button">Đổi số khác</button>
+  </div>
+</section>
+
 <section class="onboard" id="onboard" hidden>
   <div class="ob-card">
+    <div class="ob-step" id="obStep"><i class="done"></i><i class="done"></i><i class="on"></i></div>
     <canvas id="obMark" width="64" height="64"></canvas>
     <h1>Bản đồ<em>cầu vồng</em></h1>
-    <p class="lede">Chơi game trên đường về quê, gom điểm, leo bảng xếp hạng toàn quốc.</p>
+    <p class="lede">Chỉ còn một bước: đặt biệt danh để hiện trên bảng xếp hạng.</p>
     <label for="obNick">Đặt biệt danh của bạn</label>
     <input id="obNick" maxlength="14" placeholder="VD: keo_mut_2k" autocomplete="off">
     <p class="ob-err" id="obErr"></p>
@@ -767,6 +1012,7 @@
   <div class="viewport">
     <section class="hub" id="hub">
       <div class="banner">
+        <span class="multtag" id="hubMult" hidden>x2 <em>ĐIỂM</em></span>
         <h1>4 trò chơi<em>1 bảng xếp hạng</em></h1>
         <p>Chơi để gom điểm và leo bảng xếp hạng toàn quốc. Mỗi ván chỉ tốn của bạn một phút kẹt xe.</p>
       </div>
@@ -838,9 +1084,12 @@
       <div class="playbar">
         <button class="back" id="backBtn" type="button">‹ Nhiệm vụ</button>
         <div class="playtitle" id="playTitle">—</div>
-        <div>
-          <div class="statline" id="statMain">0</div>
-          <div class="substat" id="statSub">ĐIỂM</div>
+        <div class="pstat">
+          <span class="multtag" id="playMult" hidden>x2</span>
+          <div>
+            <div class="statline" id="statMain">0</div>
+            <div class="substat" id="statSub">ĐIỂM</div>
+          </div>
         </div>
       </div>
 
@@ -1811,7 +2060,15 @@
     pong:   24        // thắng 5 bàn         -> 120
   };
 
-  var profile = { nick: "", total: 0, best: {}, trip: { ms: 0, km: 0, log: [], at: 0 } };
+  var profile = {
+    nick: "", total: 0, best: {},
+    trip: { ms: 0, km: 0, log: [], at: 0 },
+    /* auth: định danh bằng số điện thoại. **Bản thử không có backend** nên mã OTP
+       sinh ngay tại máy và hiện lên màn hình — xem mục 26 BAN-GIAO.md. */
+    auth: { phone: "", uid: "", at: 0 },
+    /* mult: hệ số nhân điểm sau khi hoàn thành nhiệm vụ chụp ảnh. */
+    mult: { x: 1, at: 0, photo: "", seen: false }
+  };
   try {
     var raw = JSON.parse(localStorage.getItem("chupa.profile") || "null");
     if (raw && typeof raw === "object") {
@@ -1826,9 +2083,24 @@
         // màn hình, thoát trình duyệt hay tắt máy giữa chừng quay lại vẫn đúng giờ.
         profile.trip.at = Number(raw.trip.at) || 0;
       }
+      if (raw.auth && typeof raw.auth === "object") {
+        profile.auth.phone = String(raw.auth.phone || "");
+        profile.auth.uid = String(raw.auth.uid || "");
+        profile.auth.at = Number(raw.auth.at) || 0;
+      }
+      if (raw.mult && typeof raw.mult === "object") {
+        profile.mult.x = Number(raw.mult.x) || 1;
+        profile.mult.at = Number(raw.mult.at) || 0;
+        profile.mult.photo = String(raw.mult.photo || "");
+        profile.mult.seen = !!raw.mult.seen;
+      }
     }
   } catch (e) {}
-  function saveProfile() { try { localStorage.setItem("chupa.profile", JSON.stringify(profile)); } catch (e) {} }
+  function trySaveProfile() {
+    try { localStorage.setItem("chupa.profile", JSON.stringify(profile)); return true; }
+    catch (e) { return false; }
+  }
+  function saveProfile() { trySaveProfile(); }
 
   // Seed ladder. Flagged in the UI as placeholder so nobody reads these as
   // real players.
@@ -3868,6 +4140,7 @@
     tripEl.hidden = true;
     playEl.hidden = false;
     syncHubBackdrop();
+    hideZToast();
     playTitle.textContent = g.name;
     statMain.textContent = "0";
     statSub.textContent = g.subInit || g.unit;
@@ -3926,7 +4199,11 @@
     // Two people sharing one phone can hand each other free wins, so only solo
     // play feeds the ladder.
     var scores = !(g.id === "pong" && g.mode === "duo");
-    var gained = scores ? Math.round(scoreVal * (COEF[g.id] || 0)) : 0;
+    /* Hệ số nhân đọc **tại lúc kết ván**, nhờ vậy tự động chỉ áp cho ván chơi
+       sau khi đã gửi ảnh — ván kết thúc trước đó đọc ra cờ vẫn bằng 1. */
+    var mult = scores ? (profile.mult.x > 1 ? profile.mult.x : 1) : 1;
+    var base = scores ? Math.round(scoreVal * (COEF[g.id] || 0)) : 0;
+    var gained = base * mult;
     var prevBest = profile.best[g.id] || 0;
     var record = scores && scoreVal > prevBest;
     var reachedGoal = scoreVal >= g.goal;
@@ -3948,7 +4225,11 @@
       endVerdict.className = "verdict lose";
       endNote.textContent = "Chuyển sang chế độ đấu bot nếu muốn cộng điểm vào bảng xếp hạng.";
     } else {
-      endVerdict.textContent = "+" + gained + " điểm" + (record ? " · kỷ lục mới!" : "");
+      /* Viết hẳn phép nhân ra chứ đừng chỉ hiện số cuối: người chơi phải thấy
+         nhiệm vụ chụp ảnh đã mang lại gì, và khi đưa lên slide thì cơ chế tự giải thích. */
+      endVerdict.textContent = mult > 1
+        ? "+" + base + " × " + mult + " = +" + gained + " điểm" + (record ? " · kỷ lục mới!" : "")
+        : "+" + gained + " điểm" + (record ? " · kỷ lục mới!" : "");
       endVerdict.className = "verdict win";
       endNote.textContent = "Tổng điểm của bạn: " + profile.total +
         (record ? "" : " · kỷ lục " + g.unit.toLowerCase() + ": " + prevBest);
@@ -4027,6 +4308,7 @@
     tripEl.hidden = true;
     hubEl.hidden = false;
     syncHubBackdrop();
+    maybeZToast();
     paintStamps();
     requestAnimationFrame(fitAll);
   }
@@ -4041,6 +4323,7 @@
     tripEl.hidden = true;
     boardEl.hidden = false;
     syncHubBackdrop();
+    hideZToast();
     buildTabs();
     paintBoard();
     drawMedals(0);
@@ -4179,6 +4462,268 @@
   var obNick = document.getElementById("obNick");
   var obErr = document.getElementById("obErr");
 
+
+  /* =========================================================
+     Đăng nhập bằng số điện thoại
+
+     **KHÔNG CÓ BACKEND.** Khách chốt làm "ở mức tương đối cho có, tránh tốn phí",
+     nên mã OTP sinh ngay tại máy rồi **hiện lên màn hình** trong một khối có
+     nhãn "bản thử". Không gửi SMS, không tốn một đồng.
+
+     > **Đừng nhầm đây là xác thực thật.** Ai cũng nhập được số của người khác.
+     > Muốn thật thì phải có server phát và kiểm mã — xem mục 26 BAN-GIAO.md.
+
+     Ba màn nối tiếp nhau: số điện thoại → mã OTP → biệt danh → vào chơi.
+     ========================================================= */
+
+  var authPhoneEl = document.getElementById("authPhone");
+  var authOtpEl = document.getElementById("authOtp");
+  var apPhone = document.getElementById("apPhone");
+  var apWrap = document.getElementById("apWrap");
+  var apErr = document.getElementById("apErr");
+  var aoInput = document.getElementById("aoInput");
+  var aoWrap = document.getElementById("aoWrap");
+  var aoErr = document.getElementById("aoErr");
+  var aoCells = document.getElementById("aoCells");
+  var otpExpect = "";
+
+  /* Số di động Việt Nam sau mã vùng +84: 9 số, bắt đầu bằng 3/5/7/8/9.
+     Người dùng hay gõ cả số 0 đầu nên nhận luôn rồi tự cắt. */
+  function normPhone(v) {
+    var d = String(v).replace(/\D/g, "");
+    if (d.length === 10 && d.charAt(0) === "0") d = d.slice(1);
+    if (d.length === 11 && d.slice(0, 2) === "84") d = d.slice(2);
+    return /^[35789]\d{8}$/.test(d) ? d : "";
+  }
+
+  function prettyPhone(d) {
+    return d ? "0" + d.slice(0, 3) + " " + d.slice(3, 6) + " " + d.slice(6) : "";
+  }
+
+  function paintOtpCells() {
+    var v = aoInput.value.replace(/\D/g, "").slice(0, 6);
+    var cells = aoCells.children;
+    for (var i = 0; i < 6; i++) {
+      cells[i].textContent = v.charAt(i) || "";
+      cells[i].classList.toggle("on", i === v.length);
+    }
+  }
+
+  function showAuthPhone() {
+    authOtpEl.hidden = true;
+    onboardEl.hidden = true;
+    apErr.textContent = "";
+    apWrap.classList.remove("bad");
+    apPhone.value = prettyPhone(profile.auth.phone);
+    authPhoneEl.hidden = false;
+    setTimeout(function () { try { apPhone.focus(); } catch (e) {} }, 60);
+  }
+
+  function sendOtp() {
+    var d = normPhone(apPhone.value);
+    if (!d) {
+      apErr.textContent = "Số này chưa đúng. Nhập 9 số sau đuôi +84, ví dụ 912 345 678.";
+      apWrap.classList.add("bad");
+      snd("swapBad");
+      try { apPhone.focus(); } catch (e) {}
+      return;
+    }
+    profile.auth.phone = d;
+    otpExpect = String(Math.floor(100000 + Math.random() * 900000));
+    document.getElementById("aoPhone").textContent = prettyPhone(d);
+    document.getElementById("aoCode").textContent = otpExpect;
+    aoInput.value = "";
+    aoErr.textContent = "";
+    aoWrap.classList.remove("bad");
+    paintOtpCells();
+    authPhoneEl.hidden = true;
+    authOtpEl.hidden = false;
+    snd("chime");
+    setTimeout(function () { try { aoInput.focus(); } catch (e) {} }, 60);
+  }
+
+  function verifyOtp() {
+    var v = aoInput.value.replace(/\D/g, "");
+    if (v !== otpExpect) {
+      aoErr.textContent = v.length < 6 ? "Nhập đủ sáu số đã nhé." : "Mã chưa đúng. Xem lại mã ở khung trên.";
+      aoWrap.classList.add("bad");
+      snd("swapBad");
+      return;
+    }
+    /* uid sinh từ số điện thoại + mốc giờ, chỉ để có một định danh cho demo. */
+    profile.auth.uid = "u" + profile.auth.phone.slice(-4) + "-" + Date.now().toString(36).slice(-5);
+    profile.auth.at = Date.now();
+    saveProfile();
+    authOtpEl.hidden = true;
+    snd("win");
+    if (profile.nick) {
+      tryFullscreen();
+      paintStamps();
+      fitAll();
+      maybeZToast();
+    } else {
+      showOnboard();
+    }
+  }
+
+  document.getElementById("apSend").addEventListener("click", sendOtp);
+  apPhone.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); sendOtp(); }
+  });
+  apPhone.addEventListener("input", function () {
+    if (apErr.textContent) { apErr.textContent = ""; apWrap.classList.remove("bad"); }
+  });
+
+  document.getElementById("aoOk").addEventListener("click", verifyOtp);
+  document.getElementById("aoBack").addEventListener("click", showAuthPhone);
+  aoInput.addEventListener("input", function () {
+    if (aoErr.textContent) { aoErr.textContent = ""; aoWrap.classList.remove("bad"); }
+    paintOtpCells();
+    if (aoInput.value.replace(/\D/g, "").length === 6) setTimeout(verifyOtp, 160);
+  });
+  aoInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); verifyOtp(); }
+  });
+  aoCells.addEventListener("click", function () { try { aoInput.focus(); } catch (e) {} });
+
+  // Cung cầu vồng trên màn đầu vào, dùng lại logo chung.
+  (function () {
+    var c = document.getElementById("apMark").getContext("2d");
+    c.imageSmoothingEnabled = false;
+    c.drawImage(markCanvas(), 0, 0);
+  })();
+
+
+  /* =========================================================
+     Nhiệm vụ chụp ảnh → hệ số nhân điểm
+
+     Luồng: thẻ thông báo kiểu Zalo hiện ra → bấm vào → chụp/chọn ảnh → gửi
+     → từ giây đó mọi ván **chơi sau** được nhân đôi. Ván chơi trước giữ điểm gốc.
+
+     Nhân đúng ván sau là tự nhiên: `finishRun` đọc `profile.mult.x` **tại lúc
+     kết ván**, nên ván nào kết thúc trước khi gửi ảnh thì lúc đó cờ vẫn là 1.
+
+     **KHÔNG CÓ BACKEND.** Ảnh thu nhỏ rồi lưu thành data URI trong localStorage.
+     Không duyệt ảnh, đúng ý khách "cho có, tránh tốn phí" — tức là upload ảnh
+     gì cũng được nhân điểm. Xem mục 26 BAN-GIAO.md.
+     ========================================================= */
+
+  var MULT_X = 2;
+  var zToast = document.getElementById("zToast");
+  var photoPanel = document.getElementById("photoPanel");
+  var phBox = document.getElementById("phBox");
+  var phImg = document.getElementById("phImg");
+  var phErr = document.getElementById("phErr");
+  var phShot = "";
+
+  function paintMultTags() {
+    var on = profile.mult.x > 1;
+    document.getElementById("hubMult").hidden = !on;
+    document.getElementById("playMult").hidden = !on;
+  }
+
+  /* Thẻ thông báo chỉ hiện khi: đã đăng nhập xong, chưa gửi ảnh, và đang ở
+     màn hình chính. Hiện chậm 1,2 giây cho giống một tin vừa tới. */
+  var zTimer = null;
+  function maybeZToast() {
+    if (zTimer) { clearTimeout(zTimer); zTimer = null; }
+    var ok = profile.auth.uid && profile.nick && profile.mult.x === 1 &&
+             !hubEl.hidden && onboardEl.hidden && authPhoneEl.hidden && authOtpEl.hidden;
+    if (!ok) { hideZToast(); return; }
+    zTimer = setTimeout(function () {
+      zToast.hidden = false;
+      void zToast.offsetHeight;            // chốt trạng thái đầu trước khi bật chuyển động
+      zToast.classList.add("in");
+      snd("chime");
+    }, 1200);
+  }
+
+  function hideZToast() {
+    zToast.classList.remove("in");
+    if (zTimer) { clearTimeout(zTimer); zTimer = null; }
+    setTimeout(function () { if (!zToast.classList.contains("in")) zToast.hidden = true; }, 440);
+  }
+
+  function openPhoto() {
+    hideZToast();
+    phErr.textContent = "";
+    phShot = "";
+    phBox.classList.remove("has");
+    photoPanel.hidden = false;
+  }
+
+  /* Thu ảnh về tối đa 640px rồi xuất JPEG. Ảnh chụp từ điện thoại nặng 3–8 MB;
+     localStorage chỉ chứa được khoảng 5 MB **cho cả hồ sơ**, nhét ảnh gốc vào là
+     vượt hạn mức và mất sạch điểm người chơi. */
+  function shrinkImage(file, cb) {
+    var url = URL.createObjectURL(file);
+    var im = new Image();
+    im.onload = function () {
+      try {
+        var k = Math.min(1, 640 / Math.max(im.width, im.height));
+        var w = Math.max(1, Math.round(im.width * k)), h = Math.max(1, Math.round(im.height * k));
+        var cv = document.createElement("canvas");
+        cv.width = w; cv.height = h;
+        var g = cv.getContext("2d");
+        g.imageSmoothingEnabled = true;
+        g.imageSmoothingQuality = "high";
+        g.drawImage(im, 0, 0, w, h);
+        cb(cv.toDataURL("image/jpeg", 0.72));
+      } catch (e) { cb(""); }
+      URL.revokeObjectURL(url);
+    };
+    im.onerror = function () { URL.revokeObjectURL(url); cb(""); };
+    im.src = url;
+  }
+
+  document.getElementById("phFile").addEventListener("change", function (e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    phErr.textContent = "";
+    shrinkImage(f, function (data) {
+      if (!data) { phErr.textContent = "Không đọc được ảnh này. Thử tấm khác nhé."; return; }
+      phShot = data;
+      phImg.src = data;
+      phBox.classList.add("has");
+      snd("tap");
+    });
+  });
+
+  document.getElementById("phSend").addEventListener("click", function () {
+    if (!phShot) {
+      phErr.textContent = "Chụp hoặc chọn một tấm ảnh trước đã.";
+      snd("swapBad");
+      return;
+    }
+    profile.mult.x = MULT_X;
+    profile.mult.at = Date.now();
+    profile.mult.seen = true;
+    profile.mult.photo = phShot;
+    /* Ảnh có thể vượt hạn mức localStorage (~5 MB cho cả hồ sơ). Thử lưu cả ảnh;
+       không được thì **bỏ ảnh nhưng giữ hệ số** — ảnh chỉ để xem lại, còn hệ số
+       mới là thứ người chơi quan tâm. Đừng để mất cả hai. */
+    if (!trySaveProfile()) {
+      profile.mult.photo = "";
+      trySaveProfile();
+    }
+    photoPanel.hidden = true;
+    paintMultTags();
+    paintStamps();
+    snd("record");
+  });
+
+  document.getElementById("phBack").addEventListener("click", function () {
+    photoPanel.hidden = true;
+    maybeZToast();
+  });
+
+  zToast.addEventListener("click", openPhoto);
+  zToast.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPhoto(); }
+  });
+
+  paintMultTags();
+
   function showOnboard() {
     obNick.value = profile.nick;
     obErr.textContent = "";
@@ -4199,6 +4744,7 @@
     tryFullscreen();
     paintStamps();
     fitAll();
+    maybeZToast();
   }
 
   document.getElementById("obPlay").addEventListener("click", commitNick);
@@ -4600,7 +5146,11 @@
     c.drawImage(markCanvas(), 0, 0);
   })();
 
-  if (!profile.nick) showOnboard();
+  /* Cọng vào. Khách chốt **bắt nhập số trước khi chơi**, nên thứ tự là
+     số điện thoại → OTP → biệt danh. Thiếu bất cứ bước nào thì quay về đúng
+     bước đó chứ đừng bắt làm lại từ đầu. */
+  if (!profile.auth.uid) showAuthPhone();
+  else if (!profile.nick) showOnboard();
 
   document.getElementById("endAgain").addEventListener("click", function () {
     var mode = active ? active.mode : null;

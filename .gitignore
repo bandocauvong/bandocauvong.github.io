@@ -31,3 +31,14 @@ bandocauvong-*.png
 
 # Prompt mo phien moi cho tai khoan kia - chi nam o may
 PROMPT-BAT-DAU.md
+
+# Tài liệu và ảnh gốc client cấp (brief chiến dịch, brand induction, ảnh chụp).
+# Thư mục SMMM/ trước đây KHÔNG bị chặn — một lần `git add -A` là cả bộ brief
+# của Chupa Chups lên web công khai. Chặn cả thư mục lẫn các đuôi hay gặp.
+SMMM/
+*.pdf
+*.docx
+*.xlsx
+*.pptx
+*.HEIC
+*.heic
