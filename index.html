@@ -338,6 +338,45 @@
   .ob-card .linkish:hover { color: var(--red); }
   .ob-note { margin: 0; font-size: .68rem; line-height: 1.45; color: var(--ink-soft); max-width: 30ch; }
 
+  /* ---------- Màn tài khoản ---------- */
+  .acc-card { width: min(360px, 100%); }
+  .accrow {
+    align-self: stretch; display: flex; align-items: center; gap: 10px;
+    background: var(--cream); border: 3px solid var(--ink); padding: 9px 11px; text-align: left;
+  }
+  .accrow .aicon {
+    flex: none; width: 34px; height: 34px; display: grid; place-items: center;
+    background: var(--sun); border: 2px solid var(--ink);
+    font-family: var(--font-display); font-weight: 800; font-size: .9rem; color: var(--ink);
+  }
+  .accrow .atxt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .accrow .atxt b {
+    font-family: var(--font-display); font-weight: 800; font-size: 1.02rem; letter-spacing: .03em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .accrow .atxt span {
+    font-size: .66rem; color: var(--ink-soft); font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .accstats {
+    align-self: stretch; display: flex; gap: 8px;
+  }
+  .accstats div {
+    flex: 1; min-width: 0; background: rgba(255,248,231,.8); border: 3px solid var(--ink);
+    padding: 7px 6px; text-align: center;
+  }
+  .accstats b {
+    display: block; font-family: var(--font-display); font-weight: 800;
+    font-size: 1.15rem; line-height: 1.1; color: var(--red);
+  }
+  .accstats span { font-size: .6rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+  /* Nút đăng xuất phải trông khác hẳn hai nút trên — đây là việc có hậu quả. */
+  .btn.danger {
+    background: transparent; color: var(--red); border-color: var(--red);
+    box-shadow: 0 5px 0 rgba(228,0,43,.35);
+  }
+  .btn.danger:hover { background: rgba(228,0,43,.08); }
+
   /* ---------- Dải nút vào nhiệm vụ chụp ảnh ----------
      Đặt giữa banner và lưới bốn trò. **Lấy được chỗ mà không làm hub thu nhỏ**
      vì lưới có `flex: 1` + `align-content: center` nên đang hở 162px bên trong
@@ -878,6 +917,34 @@
   </div>
 </section>
 
+<section class="onboard" id="account" hidden>
+  <div class="ob-card acc-card">
+    <button class="pxbtn share-back" id="accBack" type="button" title="Quay lại" aria-label="Quay lại"><svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><g fill="currentColor"><rect x="0" y="4" width="1" height="1"/><rect x="1" y="3" width="1" height="3"/><rect x="2" y="2" width="1" height="5"/><rect x="3" y="4" width="6" height="1"/></g></svg></button>
+    <p class="qr-title">Tài khoản</p>
+
+    <div class="accrow">
+      <span class="aicon">ĐT</span>
+      <span class="atxt">
+        <b id="accPhone">—</b>
+        <span id="accMeta">—</span>
+      </span>
+    </div>
+
+    <div class="accstats">
+      <div><b id="accTotal">0</b><span>Tổng điểm</span></div>
+      <div><b id="accMult">x1</b><span>Hệ số</span></div>
+    </div>
+
+    <label for="accNick">Biệt danh</label>
+    <input id="accNick" maxlength="14" placeholder="VD: keo_mut_2k" autocomplete="off">
+    <p class="ob-err" id="accErr"></p>
+
+    <button class="btn" id="accSave" type="button">Lưu biệt danh</button>
+    <button class="btn danger" id="accOut" type="button">Đăng xuất</button>
+    <p class="ob-note">Đăng xuất rồi đăng nhập lại đúng số này thì điểm vẫn còn.</p>
+  </div>
+</section>
+
 <section class="onboard" id="photoPanel" hidden>
   <div class="ob-card photo-card">
     <button class="pxbtn share-back" id="phBack" type="button" title="Quay lại" aria-label="Quay lại"><svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><g fill="currentColor"><rect x="0" y="4" width="1" height="1"/><rect x="1" y="3" width="1" height="3"/><rect x="2" y="2" width="1" height="5"/><rect x="3" y="4" width="6" height="1"/></g></svg></button>
@@ -1069,7 +1136,7 @@
       <ul class="ranks" id="rankList"></ul>
       <div class="board-actions">
         <button class="btn" id="shareRank" type="button">Tạo ảnh khoe</button>
-        <button class="btn ghost" id="editNick" type="button">Đổi biệt danh</button>
+        <button class="btn ghost" id="openAccount" type="button">Tài khoản</button>
       </div>
     </section>
 
@@ -2089,9 +2156,45 @@
       }
     }
   } catch (e) {}
+  /* Kho tài khoản theo số điện thoại. **Không có backend** nên đây chỉ là một
+     ngăn localStorage khác — đủ để đăng xuất rồi đăng nhập lại **đúng số cũ thì
+     điểm vẫn còn**, và để đổi qua lại nhiều số trên cùng một máy lúc demo.
+     Chỉ có giá trị trên chính máy đó — đổi máy là mất.
+
+     **Không chép ảnh nhiệm vụ vào kho** — mỗi ảnh vài chục KB, nhiều tài khoản
+     là vượt hạn mức localStorage và mất sạch. Hệ số nhân thì vẫn giữ. */
+  var ACC_KEY = "chupa.accounts";
+
+  function loadAccounts() {
+    try {
+      var a = JSON.parse(localStorage.getItem(ACC_KEY) || "null");
+      return (a && typeof a === "object") ? a : {};
+    } catch (e) { return {}; }
+  }
+
+  function snapshotProfile() {
+    return {
+      nick: profile.nick,
+      total: profile.total,
+      best: profile.best,
+      mult: { x: profile.mult.x, at: profile.mult.at, photo: "", seen: profile.mult.seen },
+      trip: profile.trip
+    };
+  }
+
   function trySaveProfile() {
-    try { localStorage.setItem("chupa.profile", JSON.stringify(profile)); return true; }
-    catch (e) { return false; }
+    var ok = true;
+    try { localStorage.setItem("chupa.profile", JSON.stringify(profile)); }
+    catch (e) { ok = false; }
+    // Sao lưu song song vào kho theo số, để đăng xuất giữa chừng không mất gì.
+    if (profile.auth.phone) {
+      try {
+        var acc = loadAccounts();
+        acc[profile.auth.phone] = snapshotProfile();
+        localStorage.setItem(ACC_KEY, JSON.stringify(acc));
+      } catch (e) {}
+    }
+    return ok;
   }
   function saveProfile() { trySaveProfile(); }
 
@@ -4548,10 +4651,32 @@
       snd("swapBad");
       return;
     }
+    /* Đăng nhập lại đúng số cũ thì **nạp lại điểm, biệt danh và hệ số** từ kho.
+       Số mới thì bắt đầu từ 0. Đây là thứ làm cho đăng xuất có nghĩa. */
+    var acc = loadAccounts()[profile.auth.phone];
+    if (acc) {
+      profile.nick = String(acc.nick || "");
+      profile.total = Number(acc.total) || 0;
+      profile.best = (acc.best && typeof acc.best === "object") ? acc.best : {};
+      if (acc.mult) {
+        profile.mult.x = Number(acc.mult.x) || 1;
+        profile.mult.at = Number(acc.mult.at) || 0;
+        profile.mult.seen = !!acc.mult.seen;
+        profile.mult.photo = "";          // kho không giữ ảnh, xem ghi chú ở trySaveProfile
+      }
+      if (acc.trip) {
+        profile.trip.ms = Number(acc.trip.ms) || 0;
+        profile.trip.km = Number(acc.trip.km) || 0;
+        profile.trip.log = Array.isArray(acc.trip.log) ? acc.trip.log.slice(0, 10) : [];
+        profile.trip.at = Number(acc.trip.at) || 0;
+      }
+    }
+
     /* uid sinh từ số điện thoại + mốc giờ, chỉ để có một định danh cho demo. */
     profile.auth.uid = "u" + profile.auth.phone.slice(-4) + "-" + Date.now().toString(36).slice(-5);
     profile.auth.at = Date.now();
     saveProfile();
+    paintMultTags();
     authOtpEl.hidden = true;
     snd("win");
     if (profile.nick) {
@@ -4747,7 +4872,95 @@
     if (e.key === "Enter") { e.preventDefault(); commitNick(); }
   });
   obNick.addEventListener("input", function () { if (obErr.textContent) obErr.textContent = ""; });
-  document.getElementById("editNick").addEventListener("click", showOnboard);
+
+  /* =========================================================
+     Màn tài khoản và đăng xuất
+
+     Trước đây đăng nhập một lần là nằm trong `localStorage` vĩnh viễn, không có
+     đường nào ra ngoài trừ `?reset` — mà cái đó xoá luôn cả điểm.
+
+     Giờ: đăng xuất **giữ điểm lại trong kho theo số điện thoại**, đăng nhập lại
+     đúng số đó thì điểm về. Đổi số khác thì là một tài khoản khác, bắt đầu từ 0.
+     ========================================================= */
+
+  var accountEl = document.getElementById("account");
+  var accNick = document.getElementById("accNick");
+  var accErr = document.getElementById("accErr");
+
+  function showAccount() {
+    boardEl.hidden = true;
+    accErr.textContent = "";
+    accNick.value = profile.nick;
+    document.getElementById("accPhone").textContent = prettyPhone(profile.auth.phone) || "—";
+    document.getElementById("accMeta").textContent =
+      "Mã tài khoản " + (profile.auth.uid || "—") +
+      (profile.auth.at ? " · tạo " + new Date(profile.auth.at).toLocaleDateString("vi-VN") : "");
+    document.getElementById("accTotal").textContent = profile.total;
+    document.getElementById("accMult").textContent = "x" + profile.mult.x;
+    accountEl.hidden = false;
+  }
+
+  function closeAccount() {
+    accountEl.hidden = true;
+    boardEl.hidden = false;
+  }
+
+  function saveNick() {
+    var v = accNick.value.replace(/\s+/g, " ").trim();
+    if (!v) {
+      accErr.textContent = "Nhập một biệt danh đã nhé.";
+      snd("swapBad");
+      try { accNick.focus(); } catch (e) {}
+      return;
+    }
+    profile.nick = v;
+    saveProfile();
+    paintStamps();
+    paintBoard();
+    accErr.textContent = "";
+    snd("confirm");
+    closeAccount();
+  }
+
+  function logOut() {
+    /* Lưu lại trước khi rời đi, rồi dọn sạch phiên hiện tại.
+       Kho theo số điện thoại **giữ nguyên** — đó là điểm của người ta. */
+    saveProfile();
+    try { localStorage.removeItem("chupa.profile"); } catch (e) {}
+
+    profile.nick = "";
+    profile.total = 0;
+    profile.best = {};
+    profile.auth = { phone: "", uid: "", at: 0 };
+    profile.mult = { x: 1, at: 0, photo: "", seen: false };
+    profile.trip = { ms: 0, km: 0, log: [], at: 0 };
+
+    accountEl.hidden = true;
+    boardEl.hidden = true;
+    tripEl.hidden = true;
+    playEl.hidden = true;
+    hubEl.hidden = false;
+    photoPanel.hidden = true;
+    sharePanel.hidden = true;
+    qrPanel.hidden = true;
+
+    paintMultTags();
+    paintStamps();
+    paintBoard();
+    syncHubBackdrop();
+    snd("tripStop");
+    showAuthPhone();
+  }
+
+  document.getElementById("openAccount").addEventListener("click", showAccount);
+  document.getElementById("accBack").addEventListener("click", closeAccount);
+  document.getElementById("accSave").addEventListener("click", saveNick);
+  document.getElementById("accOut").addEventListener("click", logOut);
+  accNick.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); saveNick(); }
+  });
+  accNick.addEventListener("input", function () { if (accErr.textContent) accErr.textContent = ""; });
+
   /* ---------- ảnh khoe thành tích ----------
 
      Cảnh nền vẽ ở 480x270 rồi phóng đúng gấp đôi lên 960x540, CHỈ SAU ĐÓ mới
