@@ -338,44 +338,41 @@
   .ob-card .linkish:hover { color: var(--red); }
   .ob-note { margin: 0; font-size: .68rem; line-height: 1.45; color: var(--ink-soft); max-width: 30ch; }
 
-  /* ---------- Thẻ thông báo kiểu Zalo ----------
-     Đây là **thẻ mô phỏng trong trang**, không phải tin Zalo thật. Cố ý dụng
-     phẳng theo lối Zalo (nền trắng, góc tròn, đổ bóng mềm) chứ không theo
-     lối pixel của game — để người xem slide nhận ra ngay đây là thông báo
-     đến từ bên ngoài, không phải một màn của game. */
-  .ztoast {
-    position: fixed; z-index: 55;
-    left: 10px; right: 10px; top: calc(10px + env(safe-area-inset-top));
-    max-width: 440px; margin: 0 auto;
-    display: flex; gap: 10px; align-items: flex-start;
-    padding: 11px 12px;
-    background: #FFFFFF; border-radius: 14px;
-    box-shadow: 0 10px 30px rgba(20,30,60,.28), 0 2px 6px rgba(20,30,60,.16);
-    text-align: left; cursor: pointer;
-    transform: translateY(-160%);
-    transition: transform .42s cubic-bezier(.2,.9,.25,1);
+  /* ---------- Dải nút vào nhiệm vụ chụp ảnh ----------
+     Đặt giữa banner và lưới bốn trò. **Lấy được chỗ mà không làm hub thu nhỏ**
+     vì lưới có `flex: 1` + `align-content: center` nên đang hở 162px bên trong
+     (81 trên + 81 dưới) — thêm dải này chỉ ăn vào phần hở đó.
+     Hub thu nhỏ là avatar 96px bị rơi điểm ảnh — xem luật số 2 CLAUDE.md. */
+  .misscta {
+    align-self: stretch; display: flex; align-items: center; gap: 10px;
+    padding: 9px 11px; cursor: pointer; text-align: left;
+    background: var(--sun); color: var(--ink);
+    border: 3px solid var(--ink); box-shadow: 0 5px 0 var(--sun-dk);
+    transition: transform .1s, box-shadow .1s, background .2s;
   }
-  .ztoast.in { transform: translateY(0); }
-  .ztoast[hidden] { display: none; }
-  .zava {
-    flex: none; width: 40px; height: 40px; border-radius: 50%;
-    background: #0068FF; display: grid; place-items: center;
-    color: #FFF; font-family: var(--font-display); font-weight: 800; font-size: 1.05rem;
+  .misscta:hover { background: var(--sun-lt); }
+  .misscta:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--sun-dk); }
+  .misscta:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+  .misscta canvas { width: 34px; height: 34px; image-rendering: pixelated; flex: none; border: 2px solid var(--ink); }
+  .misscta .mtxt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .misscta strong {
+    font-family: var(--font-display); font-weight: 800; font-size: .95rem; line-height: 1.15;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .ztxt { flex: 1; min-width: 0; }
-  .ztop { display: flex; align-items: baseline; gap: 6px; }
-  .ztop b { font-size: .84rem; font-weight: 700; color: #0B1B33; }
-  .ztop i {
-    font-style: normal; font-size: .58rem; font-weight: 700; color: #FFF;
-    background: #0068FF; border-radius: 4px; padding: 1px 4px; flex: none;
+  .misscta span {
+    font-size: .7rem; line-height: 1.25; color: var(--ink-soft);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .ztop u { margin-left: auto; text-decoration: none; font-size: .64rem; color: #8A93A3; flex: none; }
-  .zbody { margin: 3px 0 0; font-size: .78rem; line-height: 1.4; color: #3A4557; }
-  .zcta {
-    margin-top: 8px; display: inline-block;
-    font-size: .76rem; font-weight: 700; color: #0068FF;
+  .misscta .mx {
+    flex: none; font-family: var(--font-display); font-weight: 800; font-size: 1.15rem;
+    color: var(--cream); background: var(--red); border: 2px solid var(--ink);
+    padding: 1px 8px; box-shadow: 0 2px 0 var(--red-dk);
   }
-  .zdemo { font-size: .56rem; color: #A6AEBC; margin: 5px 0 0; }
+  /* Đã làm xong thì đổi sang hệ xanh để nhìn một cái biết ngay, vẫn bấm
+     được để xem lại ảnh đã gửi. */
+  .misscta.done { background: #DFF6E5; box-shadow: 0 5px 0 #8FCFA3; }
+  .misscta.done:hover { background: #EAFBEF; }
+  .misscta.done .mx { background: var(--jade); box-shadow: 0 2px 0 #14764D; }
 
   /* ---------- Nhiệm vụ chụp ảnh ---------- */
   .photo-card { width: min(380px, 100%); }
@@ -881,19 +878,6 @@
   </div>
 </section>
 
-<div class="ztoast" id="zToast" role="button" tabindex="0" hidden>
-  <span class="zava">CC</span>
-  <div class="ztxt">
-    <div class="ztop">
-      <b>Chupa Chups</b><i>OA</i><u>vừa xong</u>
-    </div>
-    <p class="zbody">Để nhân đôi điểm mọi ván từ giờ: chụp một tấm ảnh có kẹo Chupa Chups
-    trên đường về quê, gửi lên là xong.</p>
-    <span class="zcta">Mở nhiệm vụ chụp ảnh ›</span>
-    <p class="zdemo">Bản thử — thẻ mô phỏng trong trang, chưa nối Zalo OA thật.</p>
-  </div>
-</div>
-
 <section class="onboard" id="photoPanel" hidden>
   <div class="ob-card photo-card">
     <button class="pxbtn share-back" id="phBack" type="button" title="Quay lại" aria-label="Quay lại"><svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><g fill="currentColor"><rect x="0" y="4" width="1" height="1"/><rect x="1" y="3" width="1" height="3"/><rect x="2" y="2" width="1" height="5"/><rect x="3" y="4" width="6" height="1"/></g></svg></button>
@@ -934,7 +918,7 @@
     <div class="phonewrap" id="apWrap">
       <b>+84</b>
       <input id="apPhone" type="tel" inputmode="numeric" maxlength="11"
-             placeholder="912 345 678" autocomplete="tel">
+             placeholder="0912 345 678" autocomplete="tel">
     </div>
     <p class="ob-err" id="apErr"></p>
     <button class="btn" id="apSend" type="button">Gửi mã xác thực</button>
@@ -1016,6 +1000,15 @@
         <h1>4 trò chơi<em>1 bảng xếp hạng</em></h1>
         <p>Chơi để gom điểm và leo bảng xếp hạng toàn quốc. Mỗi ván chỉ tốn của bạn một phút kẹt xe.</p>
       </div>
+
+      <button class="misscta" id="openPhoto" type="button">
+        <canvas id="photoIcon" width="34" height="34"></canvas>
+        <span class="mtxt">
+          <strong id="mctaTitle">Nhiệm vụ chụp ảnh</strong>
+          <span id="mctaSub">Chụp một tấm → nhân đôi điểm mọi ván sau đó</span>
+        </span>
+        <span class="mx" id="mctaX">x2</span>
+      </button>
 
       <div class="grid" id="missionGrid"></div>
 
@@ -4140,7 +4133,6 @@
     tripEl.hidden = true;
     playEl.hidden = false;
     syncHubBackdrop();
-    hideZToast();
     playTitle.textContent = g.name;
     statMain.textContent = "0";
     statSub.textContent = g.subInit || g.unit;
@@ -4308,7 +4300,6 @@
     tripEl.hidden = true;
     hubEl.hidden = false;
     syncHubBackdrop();
-    maybeZToast();
     paintStamps();
     requestAnimationFrame(fitAll);
   }
@@ -4323,7 +4314,6 @@
     tripEl.hidden = true;
     boardEl.hidden = false;
     syncHubBackdrop();
-    hideZToast();
     buildTabs();
     paintBoard();
     drawMedals(0);
@@ -4487,17 +4477,25 @@
   var aoCells = document.getElementById("aoCells");
   var otpExpect = "";
 
-  /* Số di động Việt Nam sau mã vùng +84: 9 số, bắt đầu bằng 3/5/7/8/9.
-     Người dùng hay gõ cả số 0 đầu nên nhận luôn rồi tự cắt. */
+  /* Đây là **bản mock-up để chụp slide**, khách chốt *"bùa bùa để người ta nhập
+     10 số đại đại thôi"*. Nên chỉ đếm số chữ số, **không kiểm đầu số nhà mạng**
+     — kiểm chặt thì lúc demo trước khách gõ số bạ là bị chặn, mất nhịp thuyết trình.
+     Nhận 9–11 chữ số, tự cắt số 0 đầu và tiền tố 84 nếu người dùng gõ vào.
+
+     > Muốn chạy thật thì **siết lại ở ĐÚNG hàm này**: `/^[35789]\d{8}$/`. */
   function normPhone(v) {
     var d = String(v).replace(/\D/g, "");
-    if (d.length === 10 && d.charAt(0) === "0") d = d.slice(1);
-    if (d.length === 11 && d.slice(0, 2) === "84") d = d.slice(2);
-    return /^[35789]\d{8}$/.test(d) ? d : "";
+    if (d.length > 9 && d.charAt(0) === "0") d = d.slice(1);
+    if (d.length > 10 && d.slice(0, 2) === "84") d = d.slice(2);
+    return /^\d{9,11}$/.test(d) ? d : "";
   }
 
   function prettyPhone(d) {
-    return d ? "0" + d.slice(0, 3) + " " + d.slice(3, 6) + " " + d.slice(6) : "";
+    if (!d) return "";
+    // 9 số thì thêm lại số 0 đầu; 10 số trở lên thì giữ nguyên, đừng thêm nữa
+    // kểo ra 11 chữ số nhìn như sai.
+    var t = d.length === 9 ? "0" + d : d;
+    return t.slice(0, 4) + " " + t.slice(4, 7) + " " + t.slice(7);
   }
 
   function paintOtpCells() {
@@ -4522,7 +4520,7 @@
   function sendOtp() {
     var d = normPhone(apPhone.value);
     if (!d) {
-      apErr.textContent = "Số này chưa đúng. Nhập 9 số sau đuôi +84, ví dụ 912 345 678.";
+      apErr.textContent = "Nhập giúp mình số điện thoại 10 số nhé.";
       apWrap.classList.add("bad");
       snd("swapBad");
       try { apPhone.focus(); } catch (e) {}
@@ -4560,7 +4558,6 @@
       tryFullscreen();
       paintStamps();
       fitAll();
-      maybeZToast();
     } else {
       showOnboard();
     }
@@ -4609,7 +4606,6 @@
      ========================================================= */
 
   var MULT_X = 2;
-  var zToast = document.getElementById("zToast");
   var photoPanel = document.getElementById("photoPanel");
   var phBox = document.getElementById("phBox");
   var phImg = document.getElementById("phImg");
@@ -4620,35 +4616,23 @@
     var on = profile.mult.x > 1;
     document.getElementById("hubMult").hidden = !on;
     document.getElementById("playMult").hidden = !on;
-  }
 
-  /* Thẻ thông báo chỉ hiện khi: đã đăng nhập xong, chưa gửi ảnh, và đang ở
-     màn hình chính. Hiện chậm 1,2 giây cho giống một tin vừa tới. */
-  var zTimer = null;
-  function maybeZToast() {
-    if (zTimer) { clearTimeout(zTimer); zTimer = null; }
-    var ok = profile.auth.uid && profile.nick && profile.mult.x === 1 &&
-             !hubEl.hidden && onboardEl.hidden && authPhoneEl.hidden && authOtpEl.hidden;
-    if (!ok) { hideZToast(); return; }
-    zTimer = setTimeout(function () {
-      zToast.hidden = false;
-      void zToast.offsetHeight;            // chốt trạng thái đầu trước khi bật chuyển động
-      zToast.classList.add("in");
-      snd("chime");
-    }, 1200);
-  }
-
-  function hideZToast() {
-    zToast.classList.remove("in");
-    if (zTimer) { clearTimeout(zTimer); zTimer = null; }
-    setTimeout(function () { if (!zToast.classList.contains("in")) zToast.hidden = true; }, 440);
+    var cta = document.getElementById("openPhoto");
+    cta.classList.toggle("done", on);
+    document.getElementById("mctaTitle").textContent =
+      on ? "Đã bật nhân đôi điểm" : "Nhiệm vụ chụp ảnh";
+    document.getElementById("mctaSub").textContent =
+      on ? "Mọi ván từ giờ đều được nhân đôi — bấm để xem lại ảnh"
+         : "Chụp một tấm → nhân đôi điểm mọi ván sau đó";
+    document.getElementById("mctaX").textContent = on ? "✓ x2" : "x2";
   }
 
   function openPhoto() {
-    hideZToast();
     phErr.textContent = "";
-    phShot = "";
-    phBox.classList.remove("has");
+    // Đã gửi rồi thì mở lại cho xem ảnh cũ, đừng bắt chụp lại từ đầu.
+    phShot = profile.mult.photo || "";
+    if (phShot) { phImg.src = phShot; phBox.classList.add("has"); }
+    else phBox.classList.remove("has");
     photoPanel.hidden = false;
   }
 
@@ -4711,16 +4695,28 @@
     paintStamps();
     snd("record");
   });
-
   document.getElementById("phBack").addEventListener("click", function () {
     photoPanel.hidden = true;
-    maybeZToast();
   });
+  document.getElementById("openPhoto").addEventListener("click", openPhoto);
 
-  zToast.addEventListener("click", openPhoto);
-  zToast.addEventListener("keydown", function (e) {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPhoto(); }
-  });
+  // Biểu tượng máy ảnh pixel trên dải nút nhiệm vụ.
+  (function () {
+    var c = document.getElementById("photoIcon").getContext("2d");
+    c.imageSmoothingEnabled = false;
+    rect(c, 0, 0, 34, 34, P.pinkPale);
+    rect(c, 2, 9, 30, 21, P.ink);          // thân máy
+    rect(c, 3, 10, 28, 19, P.red);
+    rect(c, 3, 10, 28, 3, P.redLt);
+    rect(c, 11, 5, 12, 5, P.ink);          // ụ ngắm
+    rect(c, 12, 6, 10, 3, P.redDk);
+    disc(c, 17, 20, 8, P.ink);             // ống kính
+    disc(c, 17, 20, 6, P.cream);
+    disc(c, 17, 20, 4, P.aqua);
+    disc(c, 17, 20, 2, P.white);
+    rect(c, 25, 13, 4, 3, P.sun);          // đèn nháy
+    rect(c, 25, 13, 4, 1, P.sunLt);
+  })();
 
   paintMultTags();
 
@@ -4744,7 +4740,6 @@
     tryFullscreen();
     paintStamps();
     fitAll();
-    maybeZToast();
   }
 
   document.getElementById("obPlay").addEventListener("click", commitNick);
@@ -5145,6 +5140,23 @@
     c.imageSmoothingEnabled = false;
     c.drawImage(markCanvas(), 0, 0);
   })();
+
+  /* ĐỢNG GỠ: đường dọn sạch hồ sơ để **chụp lại luồng đăng nhập cho slide**.
+     Mở `?reset` là về trạng thái người chơi mới. Không thì phải mở bảng
+     devtools xoá localStorage — không ai làm thế giữa lúc đang thuyết trình.
+     Không thêm nút nào lên giao diện vì đây là việc của người làm demo,
+     không phải của người chơi. */
+  if (/[?&]reset/.test(location.search)) {
+    try {
+      localStorage.removeItem("chupa.profile");
+      profile.nick = ""; profile.total = 0; profile.best = {};
+      profile.auth = { phone: "", uid: "", at: 0 };
+      profile.mult = { x: 1, at: 0, photo: "", seen: false };
+      profile.trip = { ms: 0, km: 0, log: [], at: 0 };
+      paintMultTags();
+      paintStamps();
+    } catch (e) {}
+  }
 
   /* Cọng vào. Khách chốt **bắt nhập số trước khi chơi**, nên thứ tự là
      số điện thoại → OTP → biệt danh. Thiếu bất cứ bước nào thì quay về đúng
