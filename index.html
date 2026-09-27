@@ -5368,6 +5368,12 @@
       profile.trip = { ms: 0, km: 0, log: [], at: 0 };
       paintMultTags();
       paintStamps();
+      /* Gỡ `?reset` khỏi URL ngay sau khi dùng. Để nguyên thì **mỗi lần tải lại
+         trang là xoá tiếp** — đang dựng slide mà refresh một cái là mất phiên,
+         đã vấp đúng lỗi này lúc kiểm trên link thật. */
+      if (history && history.replaceState) {
+        history.replaceState(null, "", location.pathname);
+      }
     } catch (e) {}
   }
 
