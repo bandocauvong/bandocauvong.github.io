@@ -110,7 +110,9 @@
   /* Hai nút tiếng đứng giữa thanh đầu trang: một cho nhạc nền, một cho hiệu
      ứng. Tách ra vì hai thứ này lấn nhau, người chơi hay muốn tắt nhạc mà
      vẫn giữ hiệu ứng. Đủ to để bấm bằng ngón tay. */
-  .sndgroup { display: flex; gap: 6px; margin-left: auto; flex: none; }
+  /* Cụm ba nút biểu tượng nằm **ngoài cùng bên phải**, ô điểm đứng trước nó. */
+  .sndgroup { display: flex; gap: 6px; flex: none; }
+  .topbar .stamps { margin-left: auto; }
   .sndbtn {
     flex: none; width: 32px; height: 32px; padding: 0; cursor: pointer;
     display: grid; place-items: center; line-height: 1;
@@ -1037,6 +1039,10 @@
       <canvas class="swirl" id="swirlMark" width="28" height="28"></canvas>
       <span>BẢN ĐỒ <b>CẦU VỒNG</b></span>
     </div>
+    <div class="stamps">
+      <span>Điểm</span>
+      <b id="totalPts">0</b>
+    </div>
     <div class="sndgroup">
       <button class="sndbtn" id="musicBtn" type="button" aria-label="Bật tắt nhạc nền">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -1053,10 +1059,13 @@
           <path class="slash" d="M3 3 21 21"/>
         </svg>
       </button>
-    </div>
-    <div class="stamps">
-      <span>Điểm</span>
-      <b id="totalPts">0</b>
+      <button class="sndbtn" id="accBtn" type="button" aria-label="Tài khoản của bạn" title="Tài khoản">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="3.6"/>
+          <path d="M4.5 20.2c0-4 3.4-6.2 7.5-6.2s7.5 2.2 7.5 6.2"/>
+        </svg>
+      </button>
     </div>
   </div>
 
@@ -1136,7 +1145,6 @@
       <ul class="ranks" id="rankList"></ul>
       <div class="board-actions">
         <button class="btn" id="shareRank" type="button">Tạo ảnh khoe</button>
-        <button class="btn ghost" id="openAccount" type="button">Tài khoản</button>
       </div>
     </section>
 
@@ -4887,8 +4895,18 @@
   var accNick = document.getElementById("accNick");
   var accErr = document.getElementById("accErr");
 
+  /* `#account` mang class `onboard` nên là **khung phủ toàn màn hình**
+     (`position: fixed; inset: 0`). Vì vậy **không được ẩn màn nào bên dưới** —
+     ẩn đi thì lúc đóng phải đoán xem trước đó đang ở đâu, đoán sai là ra màn khác.
+
+     Nhưng nút này nằm trên thanh đầu trang nên **bấm được giữa ván**. Phải
+     tạm dừng, không thì người chơi **chết sau lưng khung** mà không biết.
+     `running = false` là tạm dừng sạch: vòng lặp vẫn vẽ, chỉ không bước nữa. */
+  var accWasRunning = false;
+
   function showAccount() {
-    boardEl.hidden = true;
+    accWasRunning = running;
+    running = false;
     accErr.textContent = "";
     accNick.value = profile.nick;
     document.getElementById("accPhone").textContent = prettyPhone(profile.auth.phone) || "—";
@@ -4902,7 +4920,8 @@
 
   function closeAccount() {
     accountEl.hidden = true;
-    boardEl.hidden = false;
+    if (accWasRunning) running = true;
+    accWasRunning = false;
   }
 
   function saveNick() {
@@ -4928,6 +4947,15 @@
     saveProfile();
     try { localStorage.removeItem("chupa.profile"); } catch (e) {}
 
+    /* Đăng xuất giữa ván thì phải **dừng hẳn ván đó**, không thì vòng lặp vẫn
+       bước rồi gọi `finishRun` — cộng điểm vào một hồ sơ vừa đăng xuất. */
+    if (endTimer) { clearTimeout(endTimer); endTimer = null; }
+    ovEnd.hidden = true;
+    resetEndBoard();
+    running = false;
+    active = null;
+    accWasRunning = false;
+
     profile.nick = "";
     profile.total = 0;
     profile.best = {};
@@ -4952,7 +4980,7 @@
     showAuthPhone();
   }
 
-  document.getElementById("openAccount").addEventListener("click", showAccount);
+  document.getElementById("accBtn").addEventListener("click", showAccount);
   document.getElementById("accBack").addEventListener("click", closeAccount);
   document.getElementById("accSave").addEventListener("click", saveNick);
   document.getElementById("accOut").addEventListener("click", logOut);
